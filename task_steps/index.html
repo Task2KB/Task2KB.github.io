@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width", initial-scale="1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <!-- CSS only -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
+    <title>Task2KB</title>
+
+    <!-- <style> 
+      #leftleftbox {
+          float:left; 
+          width:2%;
+      }
+      #leftbox {
+          float:left; 
+          width:15%;
+      }
+      #middlebox{
+          float:left;
+          width:58%;
+      }
+      #greybox{
+          float:left;
+          background: rgb(218, 214, 214);
+      }
+      #rightbox{
+          float:right;
+          width:23%;
+      }
+      #rightrightbox{
+          float:right;
+          width:2%;
+      }
+    </style>     -->
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg bg-light sticky-top bg-dark">
+    <div class="container">
+      <a class="navbar-brand" href="/">
+        <img src="https://drive.google.com/uc?export=view&id=1MVZXFa4FT78IvIqTegrAu9fxcPOnR4uw" width="130" height="50" alt="how2kb_logo">
+      </a>
+    <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav">
+            <li class="nav-item">
+              <a class="nav-link text-light bg-dark active" aria-current="page" href="/">Home</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link text-light bg-dark" href="/">Docs</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link text-light bg-dark" href="/">Use Cases</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link text-light bg-dark" href="/">Team</a>
+            </li>
+        </ul>
+    </div>
+    </div>
+</nav>
+
+<!-- <div id = "boxes"> -->
+    <!-- <div id = "leftleftbox">
+      <div class="fw-bold fs-2">&nbsp;&nbsp;</div>
+    </div> -->
+    <!-- <div id = "leftbox">
+      <div class="fw-bold fs-2">Task Name:</div>
+      <div class="fs-4" style="background-color: rgb(0, 0, 0); color:rgb(255, 255, 255); max-width: max-content;"> &nbsp;&nbsp; Roast a Chicken &nbsp;&nbsp;</div>
+      
+      <div class="fw-bold fs-4">Task Summary</div>
+      <div id = "greybox" class="text-wrap" style="word-wrap: break-word; width: 100%;">
+         While perfectly roasting a chicken may seem difficult, it’s actually relatively simple. Start by seasoning your chicken with ½ teaspoon of kosher salt per pound of meat. Once you’ve seasoned your chicken, let it rest at room temperature for at least 30 minutes to help it cook evenly. Pat the chicken dry to remove any excess moisture and drizzle 1 tablespoon of oil in a skillet or roasting pan. Put the chicken into the skillet and put it in an oven preheated to 425 degrees Fahrenheit. Bake it for 1 hour. To test if it’s done, put a meat thermometer into the thickest part of the thigh. Your chicken is done when it reaches 165 degrees Fahrenheit. Rest the chicken for 15 to 20 minutes before carving it so the juices redistribute into the meat. To learn how to marinate your roasted chicken, keep reading!
+      </div>
+      <div class="fw-bold fs-2">&nbsp;&nbsp;</div> 
+      <div class="fw-bold fs-4">Questions</div> 
+      <div>
+        <ul class="list-group list-group-flush">
+          
+          <li class="list-group-item">
+            <div>What is the purpose of the lemon? </div>
+          </li>
+          
+          <li class="list-group-item">
+            <div>Is it better to roast breast side up or down?</div>
+          </li>
+          
+          <li class="list-group-item">
+            <div>Is it possible to roast a chicken without a lemon?</div>
+          </li>
+          
+          <li class="list-group-item">
+            <div>Why would a kosher chicken be the juiciest?</div>
+          </li>
+          
+          <li class="list-group-item">
+            <div>Should I cook the chicken before roasting?</div>
+          </li>
+          
+        </ul>
+      </div>
+    </div>  -->
+
+    <div class = "container">
+      <div class="fw-bold fs-6">&nbsp;&nbsp;</div>
+      <div class="fw-bold fs-4">Available attributes for Task: &nbsp;&nbsp; Roast a Chicken </div>
+      <div class="fw-bold fs-6">&nbsp;&nbsp;</div>
+      <button type="button" class="btn btn-dark" id="summarybtn">Task Summary</button>
+      <button type="button" class="btn btn-dark" id="stepsbtn">Task Steps</button>
+      <button type="button" class="btn btn-dark" id="similartaskbtn">Similar Tasks</button>
+      <button type="button" class="btn btn-dark">Questions</button>
+      <button type="button" class="btn btn-dark">Advanced Attibutes</button>
+      <div class="fw-bold fs-6">&nbsp;&nbsp;</div>
+      
+      <div id = "summary_text">
+        <div class="fw-bold fs-4">Task Summary</div>
+        <div id = "greybox" class="text-wrap" style="word-wrap: break-word; width: 100%;">
+           While perfectly roasting a chicken may seem difficult, it’s actually relatively simple. Start by seasoning your chicken with ½ teaspoon of kosher salt per pound of meat. Once you’ve seasoned your chicken, let it rest at room temperature for at least 30 minutes to help it cook evenly. Pat the chicken dry to remove any excess moisture and drizzle 1 tablespoon of oil in a skillet or roasting pan. Put the chicken into the skillet and put it in an oven preheated to 425 degrees Fahrenheit. Bake it for 1 hour. To test if it’s done, put a meat thermometer into the thickest part of the thigh. Your chicken is done when it reaches 165 degrees Fahrenheit. Rest the chicken for 15 to 20 minutes before carving it so the juices redistribute into the meat. To learn how to marinate your roasted chicken, keep reading!
+        </div>
+      </div>
+      
+      <div id= "steps">
+        <div class="fw-normal fs-5"><b>&nbsp;&nbsp;Steps of the given task:</b></div>
+        <div id = "insidebox">
+          <ul class="list-group list-group-flush">
+            
+            <li class="list-group-item">
+              <b>Step 1:</b> &nbsp;  Season the chicken with 1/2 teaspoon (2 g) of kosher salt per 1 pound (450 g)
+              <div><b>Description:</b>  Remove the chicken from its packaging and take any giblets out of the cavity Then, set the chicken on a platter and sprinkle the entire surface with kosher salt Use 1/2 teaspoon (1 g) for every 1 pound (450 g) Refrigerate the uncovered chicken for up to 1 dayTip: Look for an organic or free-range chicken since these usually have the best flavor and texture This may seem like a lot of salt, but it will get into the meat and flavor the chicken Discard the giblets or save them for another recipe</div>
+            </li>
+            
+            <li class="list-group-item">
+              <b>Step 2:</b> &nbsp;  Preheat the oven to 425 °F (218 °C) and set the chicken on the counter
+              <div><b>Description:</b>  Let the chicken sit out for at least 30 minutes so it comes closer to room temperature This will help the chicken cook evenly and prevent the skin from browning before the center finishes roasting If you like the chicken to have extra-crispy skin, place a cast-iron skillet or roasting dish into the oven while it&#39;s preheating</div>
+            </li>
+            
+            <li class="list-group-item">
+              <b>Step 3:</b> &nbsp;  Pat the chicken dry and drizzle 1 tablespoon (15 ml) of olive oil in a skillet
+              <div><b>Description:</b>  Take a paper towel and blot any moisture from the surface of the chicken If you pre-heated the skillet or roasting pan, carefully take it out of the oven and set it on the stove Drizzle the olive oil into the bottom of the skillet and swirl it a little The olive oil will prevent the chicken skin from sticking to the skillet If you&#39;d like to keep the chicken legs together as they roast, wrap them together with a piece of kitchen twine</div>
+            </li>
+            
+            <li class="list-group-item">
+              <b>Step 4:</b> &nbsp;  Put the chicken into the skillet and place it in the preheated oven
+              <div><b>Description:</b>  Set the chicken into the skillet so the breasts are facing up and put the skillet on the center rack near the back of the oven Position the bird so the legs are pointing towards the back corner The back corner is one of the hottest parts of the oven Since the legs take longer to cook than the breasts, positioning the chicken this way will prevent the breast meat from drying out</div>
+            </li>
+            
+            <li class="list-group-item">
+              <b>Step 5:</b> &nbsp;  Roast the chicken until it reaches 165 °F (74 °C)
+              <div><b>Description:</b>  Set a timer for about 1 hour and leave the chicken to cook without turning or basting it You&#39;ll hear it sizzle as it cooks and it should become golden brown To test if it&#39;s finished, insert an instant-read meat thermometer into the thickest part of the thigh If it hasn&#39;t reached 165 °F (74 °C), check it again in a few minutes Keep in mind that it will take longer for a heavier bird to cook than one that doesn&#39;t weigh as much If you&#39;re using a 3 lb (14 kg) chicken, you may want to check it after only 50 minutes</div>
+            </li>
+            
+            <li class="list-group-item">
+              <b>Step 6:</b> &nbsp;  Remove the skillet and transfer the chicken to a cutting board
+              <div><b>Description:</b>  Turn off the oven and wear oven mitts to take the skillet out Use caution when you set the skillet on the stove and transfer the chicken to a cutting board since it will be sizzling If you roasted vegetables in the skillet with the chicken, scoop them out and put them on a serving plate</div>
+            </li>
+            
+            <li class="list-group-item">
+              <b>Step 7:</b> &nbsp;  Rest the chicken for 15 to 20 minutes before you carve it
+              <div><b>Description:</b>  Leave the chicken on the cutting board so the juices redistribute within the meat Resting the chicken will also make it easier to carve since you won&#39;t accidentally burn yourselfTip: For amazing croutons, toss 2 in (51 cm) chunks of bread in the drippings and return the skillet to the hot oven for 2 to 3 minutes They&#39;ll crisp up and you can serve them with the chicken or a green salad You can use the pan drippings to make gravy while the chicken is resting Store leftover roasted chicken in an airtight container for up to 3 to 4 days</div>
+            </li>
+            
+          </ul>
+        </div>
+      </div>
+
+      <div id = 'similartasks'>
+        <div class="fw-bold fs-4">Similar Tasks: </div>
+        <div class="list-group">
+          
+            <a href="/task_steps/?task=Bake+Chicken+Breast" class="list-group-item list-group-item-action">
+              <b>Article Name:</b> &nbsp;&nbsp; Bake Chicken Breast
+            </a>
+          
+            <a href="/task_steps/?task=Bake+a+Potato+in+the+Microwave" class="list-group-item list-group-item-action">
+              <b>Article Name:</b> &nbsp;&nbsp; Bake a Potato in the Microwave
+            </a>
+          
+            <a href="/task_steps/?task=Make+a+Garden+Salad" class="list-group-item list-group-item-action">
+              <b>Article Name:</b> &nbsp;&nbsp; Make a Garden Salad
+            </a>
+          
+            <a href="/task_steps/?task=Make+Hot+and+Spicy+Chicken" class="list-group-item list-group-item-action">
+              <b>Article Name:</b> &nbsp;&nbsp; Make Hot and Spicy Chicken
+            </a>
+          
+            <a href="/task_steps/?task=Grill+Burgers" class="list-group-item list-group-item-action">
+              <b>Article Name:</b> &nbsp;&nbsp; Grill Burgers
+            </a>
+          
+            <a href="/task_steps/?task=Cook+Ugali" class="list-group-item list-group-item-action">
+              <b>Article Name:</b> &nbsp;&nbsp; Cook Ugali
+            </a>
+          
+            <a href="/task_steps/?task=Make+Roast+Potatoes" class="list-group-item list-group-item-action">
+              <b>Article Name:</b> &nbsp;&nbsp; Make Roast Potatoes
+            </a>
+          
+            <a href="/task_steps/?task=Boil+Chicken+for+Dogs" class="list-group-item list-group-item-action">
+              <b>Article Name:</b> &nbsp;&nbsp; Boil Chicken for Dogs
+            </a>
+          
+            <a href="/task_steps/?task=Tell+if+Chicken+Is+Bad" class="list-group-item list-group-item-action">
+              <b>Article Name:</b> &nbsp;&nbsp; Tell if Chicken Is Bad
+            </a>
+          
+            <a href="/task_steps/?task=Apply+Dry+Rub+to+Chicken" class="list-group-item list-group-item-action">
+              <b>Article Name:</b> &nbsp;&nbsp; Apply Dry Rub to Chicken
+            </a>
+          
+            <a href="/task_steps/?task=Cut+Chicken+Breast+Into+Strips" class="list-group-item list-group-item-action">
+              <b>Article Name:</b> &nbsp;&nbsp; Cut Chicken Breast Into Strips
+            </a>
+          
+            <a href="/task_steps/?task=Know+if+Chicken+Is+Cooked" class="list-group-item list-group-item-action">
+              <b>Article Name:</b> &nbsp;&nbsp; Know if Chicken Is Cooked
+            </a>
+          
+            <a href="/task_steps/?task=Marinate+Chicken" class="list-group-item list-group-item-action">
+              <b>Article Name:</b> &nbsp;&nbsp; Marinate Chicken
+            </a>
+          
+            <a href="/task_steps/?task=Defrost+ChickenAdvertisement" class="list-group-item list-group-item-action">
+              <b>Article Name:</b> &nbsp;&nbsp; Defrost ChickenAdvertisement
+            </a>
+          
+        </div>
+      </div>
+
+      </div>
+    <!-- <div id = "rightbox">
+      <div class="fw-bold fs-2">&nbsp;&nbsp;</div>
+      <div class="fw-bold fs-4">Similar articles to the given one: </div>
+      <div class="list-group">
+        
+          <a href="/task_steps/?task=Bake+Chicken+Breast" class="list-group-item list-group-item-action">
+            <b>Article Name:</b> &nbsp;&nbsp; Bake Chicken Breast
+          </a>
+        
+          <a href="/task_steps/?task=Bake+a+Potato+in+the+Microwave" class="list-group-item list-group-item-action">
+            <b>Article Name:</b> &nbsp;&nbsp; Bake a Potato in the Microwave
+          </a>
+        
+          <a href="/task_steps/?task=Make+a+Garden+Salad" class="list-group-item list-group-item-action">
+            <b>Article Name:</b> &nbsp;&nbsp; Make a Garden Salad
+          </a>
+        
+          <a href="/task_steps/?task=Make+Hot+and+Spicy+Chicken" class="list-group-item list-group-item-action">
+            <b>Article Name:</b> &nbsp;&nbsp; Make Hot and Spicy Chicken
+          </a>
+        
+          <a href="/task_steps/?task=Grill+Burgers" class="list-group-item list-group-item-action">
+            <b>Article Name:</b> &nbsp;&nbsp; Grill Burgers
+          </a>
+        
+          <a href="/task_steps/?task=Cook+Ugali" class="list-group-item list-group-item-action">
+            <b>Article Name:</b> &nbsp;&nbsp; Cook Ugali
+          </a>
+        
+          <a href="/task_steps/?task=Make+Roast+Potatoes" class="list-group-item list-group-item-action">
+            <b>Article Name:</b> &nbsp;&nbsp; Make Roast Potatoes
+          </a>
+        
+          <a href="/task_steps/?task=Boil+Chicken+for+Dogs" class="list-group-item list-group-item-action">
+            <b>Article Name:</b> &nbsp;&nbsp; Boil Chicken for Dogs
+          </a>
+        
+          <a href="/task_steps/?task=Tell+if+Chicken+Is+Bad" class="list-group-item list-group-item-action">
+            <b>Article Name:</b> &nbsp;&nbsp; Tell if Chicken Is Bad
+          </a>
+        
+          <a href="/task_steps/?task=Apply+Dry+Rub+to+Chicken" class="list-group-item list-group-item-action">
+            <b>Article Name:</b> &nbsp;&nbsp; Apply Dry Rub to Chicken
+          </a>
+        
+          <a href="/task_steps/?task=Cut+Chicken+Breast+Into+Strips" class="list-group-item list-group-item-action">
+            <b>Article Name:</b> &nbsp;&nbsp; Cut Chicken Breast Into Strips
+          </a>
+        
+          <a href="/task_steps/?task=Know+if+Chicken+Is+Cooked" class="list-group-item list-group-item-action">
+            <b>Article Name:</b> &nbsp;&nbsp; Know if Chicken Is Cooked
+          </a>
+        
+          <a href="/task_steps/?task=Marinate+Chicken" class="list-group-item list-group-item-action">
+            <b>Article Name:</b> &nbsp;&nbsp; Marinate Chicken
+          </a>
+        
+          <a href="/task_steps/?task=Defrost+ChickenAdvertisement" class="list-group-item list-group-item-action">
+            <b>Article Name:</b> &nbsp;&nbsp; Defrost ChickenAdvertisement
+          </a>
+        
+      </div>
+    </div>
+    <div id = "rightrightbox">
+      <div class="fw-bold fs-2">&nbsp;&nbsp;</div>
+    </div> -->
+    <script>
+        const summaryDiv = document.getElementById("summary_text");
+        const taskStepsDiv = document.getElementById("steps");
+        const similartasksDiv = document.getElementById("similartasks");
+        const summarybtn = document.getElementById("summarybtn");
+        const stepsbtn = document.getElementById("stepsbtn");
+        const similartaskbtn = document.getElementById("similartaskbtn");
+        taskStepsDiv.style.display = 'none';
+        similartasksDiv.style.display = 'none';
+        summarybtn.onclick = function () {
+            if (summaryDiv.style.display !== "block") {
+              summaryDiv.style.display = "block";
+              taskStepsDiv.style.display = "none";
+              similartasksDiv.style.display = "none"
+            } else {
+              summaryDiv.style.display = "none";
+            }
+        };
+        stepsbtn.onclick = function () {
+            if (taskStepsDiv.style.display !== "block") {
+              taskStepsDiv.style.display = "block";
+              summaryDiv.style.display = "none";
+              similartasksDiv.style.display = "none"
+            } else {
+              taskStepsDiv.style.display = "none";
+            }
+        };
+        similartaskbtn.onclick = function () {
+            if (similartasksDiv.style.display !== "block") {
+              similartasksDiv.style.display = "block";
+              summaryDiv.style.display = "none";
+              taskStepsDiv.style.display = "none"
+            } else {
+              similartasksDiv.style.display = "none";
+            }
+        };
+    </script>
+<!-- </div> -->
+</body>
+</html>

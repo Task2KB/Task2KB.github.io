@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width", initial-scale="1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <!-- CSS only -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Quicksand" />
+    <!-- Required Stylesheets -->
+    <!-- <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css" integrity="sha384-WskhaSGFgHYWDcbwN70/dfYBj47jz9qbsMId/iRN3ewGhXQFZCSftd1LZCfmhktB" crossorigin="anonymous"> -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/json2html/1.3.0/json2html.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.json2html/1.2.0/jquery.json2html.min.js"></script>
+
+    <style>
+        .json-viewer {
+            color: #000;
+            padding-left: 20px;
+        }
+
+        .json-viewer ul {
+            list-style-type: none;
+            margin: 0;
+            margin: 0 0 0 1px;
+            border-left: 1px dotted #ccc;
+            padding-left: 2em;
+        }
+
+        .json-viewer .hide {
+            display: none;
+        }
+
+        .json-viewer .type-string {
+            color: #0B7500;
+        }
+
+        .json-viewer .type-date {
+            color: #CB7500;
+        }
+
+        .json-viewer .type-boolean {
+            color: #1A01CC;
+            font-weight: bold;
+        }
+
+        .json-viewer .type-number {
+            color: #1A01CC;
+        }
+
+        .json-viewer .type-null, .json-viewer .type-undefined {
+            color: #90a;
+        }
+
+        .json-viewer a.list-link {
+            color: #000;
+            text-decoration: none;
+            position: relative;
+        }
+
+        .json-viewer a.list-link:before {
+            color: #aaa;
+            content: "\25BC";
+            position: absolute;
+            display: inline-block;
+            width: 1em;
+            left: -1em;
+        }
+
+        .json-viewer a.list-link.collapsed:before {
+            content: "\25B6";
+        }
+
+        .json-viewer a.list-link.empty:before {
+            content: "";
+        }
+
+        .json-viewer .items-ph {
+            color: #aaa;
+            padding: 0 1em;
+        }
+
+        .json-viewer .items-ph:hover {
+            text-decoration: underline;
+        }
+
+    </style>
+    <script>
+        var JSONViewer = (function(document) {
+        var Object_prototype_toString = ({}).toString;
+        var DatePrototypeAsString = Object_prototype_toString.call(new Date);
+        
+        /** @constructor */
+        function JSONViewer() {
+            this._dom_container = document.createElement("pre");
+            this._dom_container.classList.add("json-viewer");
+        };
+
+        /**
+         * Visualise JSON object.
+         * 
+         * @param {Object|Array} json Input value
+         * @param {Number} [inputMaxLvl] Process only to max level, where 0..n, -1 unlimited
+         * @param {Number} [inputColAt] Collapse at level, where 0..n, -1 unlimited
+         */
+        JSONViewer.prototype.showJSON = function(jsonValue, inputMaxLvl, inputColAt) {
+            // Process only to maxLvl, where 0..n, -1 unlimited
+            var maxLvl = typeof inputMaxLvl === "number" ? inputMaxLvl : -1; // max level
+            // Collapse at level colAt, where 0..n, -1 unlimited
+            var colAt = typeof inputColAt === "number" ? inputColAt : -1; // collapse at
+            
+            this._dom_container.innerHTML = "";
+            walkJSONTree(this._dom_container, jsonValue, maxLvl, colAt, 0);
+        };
+
+        /**
+         * Get container with pre object - this container is used for visualise JSON data.
+         * 
+         * @return {Element}
+         */
+        JSONViewer.prototype.getContainer = function() {
+            return this._dom_container;
+        };
+
+        /**
+         * Recursive walk for input value.
+         * 
+         * @param {Element} outputParent is the Element that will contain the new DOM
+         * @param {Object|Array} value Input value
+         * @param {Number} maxLvl Process only to max level, where 0..n, -1 unlimited
+         * @param {Number} colAt Collapse at level, where 0..n, -1 unlimited
+         * @param {Number} lvl Current level
+         */
+        function walkJSONTree(outputParent, value, maxLvl, colAt, lvl) {
+            var isDate = Object_prototype_toString.call(value) === DatePrototypeAsString;
+            var realValue = !isDate && typeof value === "object" && value !== null && "toJSON" in value ? value.toJSON() : value;
+            if (typeof realValue === "object" && realValue !== null && !isDate) {
+                var isMaxLvl = maxLvl >= 0 && lvl >= maxLvl;
+                var isCollapse = colAt >= 0 && lvl >= colAt;
+                
+                var isArray = Array.isArray(realValue);
+                var items = isArray ? realValue : Object.keys(realValue);
+
+                if (lvl === 0) {
+                    // root level
+                    var rootCount = _createItemsCount(items.length);
+                    // hide/show
+                    var rootLink = _createLink(isArray ? "[" : "{");
+
+                    if (items.length) {
+                        rootLink.addEventListener("click", function() {
+                            if (isMaxLvl) return;
+
+                            rootLink.classList.toggle("collapsed");
+                            rootCount.classList.toggle("hide");
+
+                            // main list
+                            outputParent.querySelector("ul").classList.toggle("hide");
+                        });
+
+                        if (isCollapse) {
+                            rootLink.classList.add("collapsed");
+                            rootCount.classList.remove("hide");
+                        }
+                    }
+                    else {
+                        rootLink.classList.add("empty");
+                    }
+
+                    rootLink.appendChild(rootCount);
+                    outputParent.appendChild(rootLink); // output the rootLink
+                }
+
+                if (items.length && !isMaxLvl) {
+                    var len = items.length - 1;
+                    var ulList = document.createElement("ul");
+                    ulList.setAttribute("data-level", lvl);
+                    ulList.classList.add("type-" + (isArray ? "array" : "object"));
+
+                    items.forEach(function(key, ind) {
+                        var item = isArray ? key : value[key];
+                        var li = document.createElement("li");
+
+                        if (typeof item === "object") {
+                            // null && date
+                            if (!item || item instanceof Date) {
+                                li.appendChild(document.createTextNode(isArray ? "" : key + ": "));
+                                li.appendChild(createSimpleViewOf(item ? item : null, true));
+                            }
+                            // array & object
+                            else {
+                                var itemIsArray = Array.isArray(item);
+                                var itemLen = itemIsArray ? item.length : Object.keys(item).length;
+
+                                // empty
+                                if (!itemLen) {
+                                    li.appendChild(document.createTextNode(key + ": " + (itemIsArray ? "[]" : "{}")));
+                                }
+                                else {
+                                    // 1+ items
+                                    var itemTitle = (typeof key === "string" ? key + ": " : "") + (itemIsArray ? "[" : "{");
+                                    var itemLink = _createLink(itemTitle);
+                                    var itemsCount = _createItemsCount(itemLen);
+
+                                    // maxLvl - only text, no link
+                                    if (maxLvl >= 0 && lvl + 1 >= maxLvl) {
+                                        li.appendChild(document.createTextNode(itemTitle));
+                                    }
+                                    else {
+                                        itemLink.appendChild(itemsCount);
+                                        li.appendChild(itemLink);
+                                    }
+
+                                    walkJSONTree(li, item, maxLvl, colAt, lvl + 1);
+                                    li.appendChild(document.createTextNode(itemIsArray ? "]" : "}"));
+                                    
+                                    var list = li.querySelector("ul");
+                                    var itemLinkCb = function() {
+                                        itemLink.classList.toggle("collapsed");
+                                        itemsCount.classList.toggle("hide");
+                                        list.classList.toggle("hide");
+                                    };
+
+                                    // hide/show
+                                    itemLink.addEventListener("click", itemLinkCb);
+
+                                    // collapse lower level
+                                    if (colAt >= 0 && lvl + 1 >= colAt) {
+                                        itemLinkCb();
+                                    }
+                                }
+                            }
+                        }
+                        // simple values
+                        else {
+                            // object keys with key:
+                            if (!isArray) {
+                                li.appendChild(document.createTextNode(key + ": "));
+                            }
+
+                            // recursive
+                            walkJSONTree(li, item, maxLvl, colAt, lvl + 1);
+                        }
+
+                        // add comma to the end
+                        if (ind < len) {
+                            li.appendChild(document.createTextNode(","));
+                        }
+
+                        ulList.appendChild(li);
+                    }, this);
+
+                    outputParent.appendChild(ulList); // output ulList
+                }
+                else if (items.length && isMaxLvl) {
+                    var itemsCount = _createItemsCount(items.length);
+                    itemsCount.classList.remove("hide");
+
+                    outputParent.appendChild(itemsCount); // output itemsCount
+                }
+
+                if (lvl === 0) {
+                    // empty root
+                    if (!items.length) {
+                        var itemsCount = _createItemsCount(0);
+                        itemsCount.classList.remove("hide");
+
+                        outputParent.appendChild(itemsCount); // output itemsCount
+                    }
+
+                    // root cover
+                    outputParent.appendChild(document.createTextNode(isArray ? "]" : "}"));
+
+                    // collapse
+                    if (isCollapse) {
+                        outputParent.querySelector("ul").classList.add("hide");
+                    }
+                }
+            } else {
+                // simple values
+                outputParent.appendChild( createSimpleViewOf(value, isDate) );
+            }
+        };
+
+        /**
+         * Create simple value (no object|array).
+         * 
+         * @param  {Number|String|null|undefined|Date} value Input value
+         * @return {Element}
+         */
+        function createSimpleViewOf(value, isDate) {
+            var spanEl = document.createElement("span");
+            var type = typeof value;
+            var asText = "" + value;
+
+            if (type === "string") {
+                asText = '"' + value + '"';
+            } else if (value === null) {
+                type = "null";
+                //asText = "null";
+            } else if (isDate) {
+                type = "date";
+                asText = value.toLocaleString();
+            }
+
+            spanEl.className = "type-" + type;
+            spanEl.textContent = asText;
+
+            return spanEl;
+        };
+
+        /**
+         * Create items count element.
+         * 
+         * @param  {Number} count Items count
+         * @return {Element}
+         */
+        function _createItemsCount(count) {
+            var itemsCount = document.createElement("span");
+            itemsCount.className = "items-ph hide";
+            itemsCount.innerHTML = _getItemsTitle(count);
+
+            return itemsCount;
+        };
+
+        /**
+         * Create clickable link.
+         * 
+         * @param  {String} title Link title
+         * @return {Element}
+         */
+        function _createLink(title) {
+            var linkEl = document.createElement("a");
+            linkEl.classList.add("list-link");
+            linkEl.href = "javascript:void(0)";
+            linkEl.innerHTML = title || "";
+
+            return linkEl;
+        };
+
+        /**
+         * Get correct item|s title for count.
+         * 
+         * @param  {Number} count Items count
+         * @return {String}
+         */
+        function _getItemsTitle(count) {
+            var itemsTxt = count > 1 || count === 0 ? "items" : "item";
+
+            return (count + " " + itemsTxt);
+        };
+
+        return JSONViewer;
+    })(document);
+    </script>
+    <title>Task2KB</title>
+    
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg bg-light sticky-top bg-dark">
+    <div class="container">
+      <a class="navbar-brand" href="/">
+        <img src="https://drive.google.com/uc?export=view&id=1MVZXFa4FT78IvIqTegrAu9fxcPOnR4uw" width="130" height="50" alt="how2kb_logo">
+      </a>
+    <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav">
+            <li class="nav-item">
+              <a class="nav-link text-light bg-dark active" aria-current="page" href="/">Home</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link text-light bg-dark" href="/">Docs</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link text-light bg-dark" href="/topical_view/">Topical View</a>
+              </li>
+            <li class="nav-item">
+              <a class="nav-link text-light bg-dark" href="/">Use Cases</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link text-light bg-dark" href="/">Team</a>
+            </li>
+        </ul>
+    </div>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="fw-bold fs-2">Tree-structured Topical Analysis</div>
+    <!-- <textarea style="width: 100%; min-height: 100px;"></textarea> -->
+	<p>Choose action:</p>
+	<div>
+		<button type="button" class="load-json">Load Topical Info.</button>
+		<button type="button" class="collapse">Collapse to level 1</button>
+		<button type="button" class="maxlvl">Show Topics to level 1</button>
+	</div>
+	<h2>Output:</h2>
+	<div id="json"></div>
+	<script>
+		var jsonObj = {};
+		var jsonViewer = new JSONViewer();
+		document.querySelector("#json").appendChild(jsonViewer.getContainer());
+
+		// var textarea = document.querySelector("textarea");
+		// textarea.value = '{"Number of Articles ": 0, "Sub-Topics": [{"Number of Articles ": 97, "Sub-Topics": [{"Number of Articles ": 97, "Sub-Topics": [{"Intent": ["NA"], "Number of Articles ": 1, "Topic level 3": "Metalworking"}, {"Intent": ["Identify"], "Number of Articles ": 1, "Topic level 3": "Plastic"}], "Topic level 2": "DIY"}, {"Number of Articles ": 58, "Sub-Topics": [{"Number of Articles ": 38, "Sub-Topics": [{"Intent": ["Remove"], "Number of Articles ": 17, "Topic level 4": "Cleaning Food"}, {"Number of Articles ": 9, "Sub-Topics": [{"Intent": ["Remove", "Eliminate", "Get"], "Number of Articles ": 9, "Topic level 5": "Kitchen Cleaning"}], "Topic level 4": "House Cleaning"}, {"Number of Articles ": 2, "Sub-Topics": [{"Intent": ["Remove"], "Number of Articles ": 1, "Topic level 5": "Rust Stain Removal"}], "Topic level 4": "Cleaning Metals"}, {"Number of Articles ": 1, "Sub-Topics": [{"Intent": ["NA"], "Number of Articles ": 1, "Topic level 5": "Cleaning Cooking Appliances"}], "Topic level 4": "Cleaning Home Appliances"}], "Topic level 3": "Cleaning"}, {"Intent": ["Dispose"], "Number of Articles ": 5, "Topic level 3": "Household Waste Disposal"}, {"Intent": ["Remove"], "Number of Articles ": 2, "Topic level 3": "Stain Removal"}, {"Intent": ["Entertain"], "Number of Articles ": 1, "Topic level 3": "House Guests"}, {"Number of Articles ": 3, "Sub-Topics": [{"Intent": ["NA"], "Number of Articles ": 3, "Topic level 4": "Kitchen Organization"}], "Topic level 3": "Home Organization"}, {"Intent": ["Hold", "Use", "Set", "Fold"], "Number of Articles ": 9, "Topic level 3": "Tableware"}, {"Intent": ["Get"], "Number of Articles ": 1, "Topic level 3": "Laundry"}], "Topic level 2": "Housekeeping"}, {"Number of Articles ": 4, "Sub-Topics": [{"Intent": ["NA"], "Number of Articles ": 1, "Topic level 3": "Heating Systems"}, {"Intent": ["Build", "Create"], "Number of Articles ": 3, "Topic level 3": "Fireplaces"}], "Topic level 2": "Heating and Cooling"}, {"Number of Articles ": 97, "Sub-Topics": [{"Number of Articles ": 1, "Sub-Topics": [{"Intent": ["Make"], "Number of Articles ": 1, "Topic level 4": "Fertilizers"}], "Topic level 3": "Compost Mulch and Soil Preparation"}, {"Number of Articles ": 2, "Sub-Topics": [{"Intent": ["Make"], "Number of Articles ": 1, "Topic level 4": "Rose Crafts"}], "Topic level 3": "Garden Crafts"}, {"Number of Articles ": 11, "Sub-Topics": [{"Intent": ["Grow", "Stake"], "Number of Articles ": 3, "Topic level 4": "Growing Fruit"}], "Topic level 3": "Planting and Growing"}], "Topic level 2": "Gardening"}, {"Number of Articles ": 3, "Sub-Topics": [{"Intent": ["NA"], "Number of Articles ": 1, "Topic level 3": "Measuring and Marking Tools"}], "Topic level 2": "Tools"}, {"Number of Articles ": 11, "Sub-Topics": [{"Number of Articles ": 10, "Sub-Topics": [{"Intent": ["Use"], "Number of Articles ": 7, "Topic level 4": "Kitchen Countertop Appliances"}], "Topic level 3": "Kitchen Appliances"}], "Topic level 2": "Home Appliances"}, {"Number of Articles ": 1, "Sub-Topics": [{"Number of Articles ": 1, "Sub-Topics": [{"Intent": ["Hide"], "Number of Articles ": 1, "Topic level 4": "Hiding Things"}], "Topic level 3": "Home Security"}], "Topic level 2": "Disaster Preparedness"}, {"Number of Articles ": 1, "Sub-Topics": [{"Intent": ["Build"], "Number of Articles ": 1, "Topic level 3": "Making Tables"}], "Topic level 2": "Furniture"}], "Topic level 1": "Home and Garden"}, {"Number of Articles ": 6207, "Sub-Topics": [{"Number of Articles ": 3430, "Sub-Topics": [{"Intent": ["Keep", "Prepare", "Make", "Decorate", "Dress"], "Number of Articles ": 41, "Topic level 3": "Salads"}, {"Number of Articles ": 524, "Sub-Topics": [{"Intent": ["Cook", "Roast", "Make"], "Number of Articles ": 9, "Topic level 4": "Slow Cooker Meat Recipes"}, {"Number of Articles ": 100, "Sub-Topics": [{"Intent": ["Bake", "Tell", "Cook"], "Number of Articles ": 15, "Topic level 5": "Pork Chops"}], "Topic level 4": "Pork"}, {"Intent": ["Cook", "Serve", "Make"], "Number of Articles ": 27, "Topic level 4": "Sausage"}, {"Number of Articles ": 166, "Sub-Topics": [{"Intent": ["Bake", "Make", "Carve", "Cook", "Roast", "Baste", "Tell", "Defrost", "Freeze", "Thaw", "Remove", "Dress"], "Number of Articles ": 41, "Topic level 5": "Turkey Dishes"}], "Topic level 4": "Poultry Recipes"}], "Topic level 3": "Meat"}, {"Number of Articles ": 515, "Sub-Topics": [{"Number of Articles ": 73, "Sub-Topics": [{"Intent": ["Make", "Crush", "Add", "Dip"], "Number of Articles ": 7, "Topic level 5": "Chocolate Cookies and Biscuits"}, {"Intent": ["Make", "Add", "Bake", "Decorate", "Keep"], "Number of Articles ": 9, "Topic level 5": "Sugar Cookies and Biscuits"}], "Topic level 4": "Cookies and Biscuits"}, {"Intent": ["Freeze", "Improve", "Make", "Troubleshoot", "Fill"], "Number of Articles ": 13, "Topic level 4": "Muffins"}, {"Number of Articles ": 176, "Sub-Topics": [{"Intent": ["Make", "Decorate", "Cut"], "Number of Articles ": 27, "Topic level 5": "Shaped and Themed Cakes"}, {"Intent": ["Make", "Keep", "Add"], "Number of Articles ": 7, "Topic level 5": "Fruit Cakes"}, {"Intent": ["Decorate", "Make", "Put", "Glaze"], "Number of Articles ": 15, "Topic level 5": "Cake Decorating"}, {"Intent": ["Substitute", "Make", "Use", "Bake", "Fix", "Defrost", "Stop", "Test", "See", "Cut", "Improve"], "Number of Articles ": 19, "Topic level 5": "Cake Making Tips"}], "Topic level 4": "Cakes"}, {"Intent": ["Make", "Write", "Thicken", "Fix", "Prepare", "Decorate", "Add", "Cover", "Keep", "Do"], "Number of Articles ": 73, "Topic level 4": "Frosting Icing and Fondant"}, {"Intent": ["Make", "Keep"], "Number of Articles ": 13, "Topic level 4": "Donuts and Doughnuts"}], "Topic level 3": "Baking"}, {"Number of Articles ": 289, "Sub-Topics": [{"Number of Articles ": 121, "Sub-Topics": [{"Intent": ["Make", "Stir"], "Number of Articles ": 17, "Topic level 5": "Chinese Dishes"}, {"Number of Articles ": 41, "Sub-Topics": [{"Intent": ["Eat", "Make", "Prepare"], "Number of Articles ": 21, "Topic level 6": "Sushi"}], "Topic level 5": "Japanese Dishes"}], "Topic level 4": "Asian Cuisine"}, {"Intent": ["Make", "Serve"], "Number of Articles ": 11, "Topic level 4": "Middle Eastern Cuisine"}, {"Number of Articles ": 54, "Sub-Topics": [{"Intent": ["Make"], "Number of Articles ": 7, "Topic level 5": "Indian Breads"}, {"Intent": ["Make"], "Number of Articles ": 7, "Topic level 5": "Indian Desserts"}, {"Intent": ["Make"], "Number of Articles ": 5, "Topic level 5": "Vegetarian Indian Dishes"}], "Topic level 4": "Indian Cuisine"}, {"Number of Articles ": 23, "Sub-Topics": [{"Intent": ["Freeze", "Make", "Eat"], "Number of Articles ": 9, "Topic level 5": "Italian Cuisine"}], "Topic level 4": "European Cuisine"}, {"Intent": ["Make", "Fold", "Use", "Eat", "Choose", "Roll", "Fix"], "Number of Articles ": 51, "Topic level 4": "Central and South American Cuisine"}], "Topic level 3": "World Cuisines"}, {"Number of Articles ": 169, "Sub-Topics": [{"Intent": ["Make", "Add"], "Number of Articles ": 15, "Topic level 4": "Gelatin Desserts"}, {"Intent": ["Make"], "Number of Articles ": 15, "Topic level 4": "Puddings"}, {"Number of Articles ": 53, "Sub-Topics": [{"Intent": ["Make"], "Number of Articles ": 9, "Topic level 5": "Ice Pops"}], "Topic level 4": "Ice Cream and Frozen Desserts"}, {"Intent": ["Make", "Prevent", "Tell", "Lattice", "Bake", "Keep", "Freeze", "Decorate", "Cut"], "Number of Articles ": 25, "Topic level 4": "Dessert Pies"}], "Topic level 3": "Desserts and Sweets"}, {"Number of Articles ": 131, "Sub-Topics": [{"Intent": ["Freeze", "Make"], "Number of Articles ": 13, "Topic level 4": "Lasagna"}, {"Intent": ["Make", "Prepare", "Freeze", "Stop"], "Number of Articles ": 13, "Topic level 4": "Macaroni and Cheese"}, {"Intent": ["Make", "Keep", "Cook"], "Number of Articles ": 15, "Topic level 4": "Spaghetti"}, {"Intent": ["Make", "Thicken"], "Number of Articles ": 9, "Topic level 4": "Pasta Sauce Recipes"}], "Topic level 3": "Pasta and Noodles"}, {"Intent": ["Eat", "Make", "Reduce", "Fix", "Prepare", "Add"], "Number of Articles ": 60, "Topic level 3": "Soups"}, {"Number of Articles ": 564, "Sub-Topics": [{"Intent": ["Eat", "Prepare", "Freeze", "Tell", "Identify", "Keep", "Grow", "Make", "Roast"], "Number of Articles ": 37, "Topic level 4": "Mushrooms"}, {"Intent": ["Mince", "Keep", "Preserve", "Make", "Get", "Extract", "Remove", "Tell", "Tie"], "Number of Articles ": 21, "Topic level 4": "Onions"}, {"Intent": ["Roast", "Eat", "Cut", "Bake", "Prepare", "Grow", "Make", "Buy", "Preserve"], "Number of Articles ": 45, "Topic level 4": "Cruciferous Vegetables"}, {"Intent": ["Use", "Make", "Eat"], "Number of Articles ": 11, "Topic level 4": "Bananas"}, {"Intent": ["Make", "Roast", "Bake", "Choose", "Cook", "Fix", "Decide", "Freeze", "Keep", "Cure"], "Number of Articles ": 65, "Topic level 4": "Potato Dishes"}, {"Intent": ["Make", "Add"], "Number of Articles ": 19, "Topic level 4": "Vegetable Soups"}, {"Intent": ["Bake", "Save", "Roast", "Make", "Grate", "Eat", "Tell", "Cook"], "Number of Articles ": 33, "Topic level 4": "Squash"}, {"Intent": ["Make", "Eat", "Prune", "Pick", "Serve"], "Number of Articles ": 27, "Topic level 4": "Berries"}], "Topic level 3": "Fruits and Vegetables"}, {"Number of Articles ": 144, "Sub-Topics": [{"Intent": ["Make", "Melt"], "Number of Articles ": 9, "Topic level 4": "Caramel"}], "Topic level 3": "Chocolate and Candy"}, {"Number of Articles ": 175, "Sub-Topics": [{"Intent": ["Eat", "Make", "Bake", "Know", "Reheat", "Fry", "Bring", "Baste", "Choose"], "Number of Articles ": 31, "Topic level 4": "Egg Basics"}, {"Intent": ["Make", "Eat", "Buy"], "Number of Articles ": 15, "Topic level 4": "Yogurt"}, {"Intent": ["Make", "Slice", "Melt", "Tell", "Soften", "Eat", "Remove", "Bake", "Serve", "Prevent", "Grate"], "Number of Articles ": 47, "Topic level 4": "Cheese"}, {"Intent": ["Clarify", "Make", "Prepare", "Stop", "Soften"], "Number of Articles ": 21, "Topic level 4": "Butter and Ghee"}], "Topic level 3": "Eggs and Dairy"}, {"Number of Articles ": 180, "Sub-Topics": [{"Intent": ["Make", "Test"], "Number of Articles ": 17, "Topic level 4": "Jams and Jellies"}, {"Intent": ["Marinate", "Make", "Remove", "Thicken", "Scratch", "Stir", "Serve", "Reduce"], "Number of Articles ": 77, "Topic level 4": "Sauces"}, {"Intent": ["Make", "Fix", "Roast"], "Number of Articles ": 17, "Topic level 4": "Gravies"}], "Topic level 3": "Jams Preserves and Condiments"}, {"Number of Articles ": 280, "Sub-Topics": [{"Intent": ["Prepare", "Cook", "Eat", "Thaw", "Make", "Bake", "Grill"], "Number of Articles ": 27, "Topic level 4": "Prawns and Shrimp"}, {"Intent": ["Bake", "Eat", "Tell", "Marinate", "Serve", "Prepare", "Cook", "Make"], "Number of Articles ": 25, "Topic level 4": "Salmon"}, {"Intent": ["Eat", "Serve", "Cook", "Make", "Bake", "Prepare"], "Number of Articles ": 23, "Topic level 4": "Crab"}], "Topic level 3": "Fish and Seafood"}, {"Number of Articles ": 125, "Sub-Topics": [{"Number of Articles ": 24, "Sub-Topics": [{"Intent": ["Make", "Bake"], "Number of Articles ": 11, "Topic level 5": "Hot Dogs"}], "Topic level 4": "Fast Food"}], "Topic level 3": "Sandwiches and Quick Meals"}, {"Intent": ["Cook", "Roast", "Make"], "Number of Articles ": 12, "Topic level 3": "Slow Cooker Recipes"}, {"Number of Articles ": 56, "Sub-Topics": [{"Intent": ["Make", "Replace", "Eat", "Be", "Start"], "Number of Articles ": 21, "Topic level 4": "Vegan"}], "Topic level 3": "Vegetarian"}], "Topic level 2": "Recipes"}, {"Number of Articles ": 76, "Sub-Topics": [{"Intent": ["Fill", "Start", "Use", "Add", "Control", "Convert", "Grill", "Measure", "Build", "Make"], "Number of Articles ": 15, "Topic level 3": "Barbecue Equipment"}, {"Number of Articles ": 31, "Sub-Topics": [{"Intent": ["Make"], "Number of Articles ": 11, "Topic level 4": "Ribs"}], "Topic level 3": "Barbecue Meat"}], "Topic level 2": "Barbecue"}, {"Intent": ["Hold", "Spoon", "Eat", "Turn", "Chew", "Fold", "Accept", "Be", "Avoid"], "Number of Articles ": 15, "Topic level 2": "Dining Etiquette"}, {"Intent": ["Handle", "Dispose", "Tell", "Get", "Keep", "Enjoy", "Know", "Prevent", "Test", "Eat", "Freeze"], "Number of Articles ": 29, "Topic level 2": "Food Safety"}, {"Number of Articles ": 843, "Sub-Topics": [{"Number of Articles ": 342, "Sub-Topics": [{"Intent": ["Improve", "Drink", "Stay", "Lessen", "Feel", "Stop", "Prepare", "Reduce", "Burn", "Avoid"], "Number of Articles ": 25, "Topic level 4": "Alcohol Consumption"}, {"Number of Articles ": 138, "Sub-Topics": [{"Intent": ["Make", "Infuse", "Drink"], "Number of Articles ": 13, "Topic level 5": "Infused Spirits and Liqueurs"}, {"Number of Articles ": 27, "Sub-Topics": [{"Intent": ["Make"], "Number of Articles ": 11, "Topic level 6": "Jello and Jelly Shots"}], "Topic level 5": "Mixed Drink Shooters and Shots"}, {"Number of Articles ": 64, "Sub-Topics": [{"Intent": ["Make", "Mix"], "Number of Articles ": 13, "Topic level 6": "Vodka Based Cocktails"}], "Topic level 5": "Cocktails"}], "Topic level 4": "Spirits and Liqueurs"}, {"Intent": ["Chug", "Enjoy", "Open", "Brew", "Make", "Disguise", "Drink", "Construct", "Change", "Buy", "Freeze", "Tap", "Depressurize", "Sell", "Repel"], "Number of Articles ": 33, "Topic level 4": "Beer and Cider"}, {"Intent": ["Make", "Understand", "Become", "Create", "Break"], "Number of Articles ": 9, "Topic level 4": "Bartending"}], "Topic level 3": "Alcoholic Drinks"}, {"Number of Articles ": 96, "Sub-Topics": [{"Intent": ["Make", "Prepare", "Drink"], "Number of Articles ": 5, "Topic level 4": "Brewing Tea"}, {"Intent": ["Make"], "Number of Articles ": 13, "Topic level 4": "Milk Tea"}, {"Intent": ["Drink", "Make"], "Number of Articles ": 9, "Topic level 4": "Green Tea"}], "Topic level 3": "Tea"}, {"Number of Articles ": 146, "Sub-Topics": [{"Intent": ["Make", "Grind", "Drink"], "Number of Articles ": 27, "Topic level 4": "Espresso Based Coffee"}, {"Number of Articles ": 44, "Sub-Topics": [{"Intent": ["Operate", "Use", "Maintain", "Reset", "Choose"], "Number of Articles ": 29, "Topic level 5": "Coffee Machines"}], "Topic level 4": "Coffee Accessories"}], "Topic level 3": "Coffee"}, {"Number of Articles ": 82, "Sub-Topics": [{"Intent": ["Make"], "Number of Articles ": 11, "Topic level 4": "Fruit Based Shakes"}, {"Intent": ["Make", "Keep", "Add", "Drink", "Pasteurize", "Maintain", "Remove", "Stop", "Prepare", "Choose"], "Number of Articles ": 82, "Topic level 4": "Smoothies"}], "Topic level 3": "Smoothies Shakes and Milk"}], "Topic level 2": "Drinks"}, {"Number of Articles ": 857, "Sub-Topics": [{"Number of Articles ": 185, "Sub-Topics": [{"Intent": ["Freeze", "Prevent", "Burn", "Thaw"], "Number of Articles ": 83, "Topic level 4": "Freezing Food"}], "Topic level 3": "Food Preservation Techniques"}, {"Intent": ["Keep", "Tell", "Ripen", "Select", "Prevent", "Produce", "Identify", "Detect", "Burn", "Buy", "Break", "Pick", "Make", "Choose", "Avoid", "Freeze", "Reduce", "Start", "Roast", "Reheat", "Wrap", "Preserve"], "Number of Articles ": 149, "Topic level 3": "Food Selection and Storage"}, {"Intent": ["Use", "Eat", "Plan", "Make", "Consider", "Decide", "Go", "Create", "Pack"], "Number of Articles ": 21, "Topic level 3": "Meal Planning"}, {"Intent": ["Blow", "Slice", "Prepare"], "Number of Articles ": 39, "Topic level 3": "Peeling Food"}, {"Number of Articles ": 230, "Sub-Topics": [{"Intent": ["Make"], "Number of Articles ": 35, "Topic level 4": "Steaming Food"}], "Topic level 3": "Basic Cooking Skills"}], "Topic level 2": "Food Preparation"}, {"Number of Articles ": 236, "Sub-Topics": [{"Number of Articles ": 47, "Sub-Topics": [{"Intent": ["Keep", "Use", "Make", "Enjoy"], "Number of Articles ": 19, "Topic level 4": "Popcorn"}, {"Intent": ["Make", "Keep"], "Number of Articles ": 7, "Topic level 4": "Dips"}], "Topic level 3": "Party Snacks"}, {"Intent": ["Survive", "Organize", "Plan", "Go"], "Number of Articles ": 7, "Topic level 3": "Parties for Children"}, {"Number of Articles ": 58, "Sub-Topics": [{"Number of Articles ": 28, "Sub-Topics": [{"Intent": ["Decline", "Write", "Print", "Fill", "Make"], "Number of Articles ": 9, "Topic level 5": "Wedding Invitations"}], "Topic level 4": "Invitations"}], "Topic level 3": "Party Planning"}, {"Intent": ["Be", "Meet", "Survive", "Enjoy", "Mingle"], "Number of Articles ": 13, "Topic level 3": "Party Socializing"}, {"Intent": ["Make", "Decorate", "Untie", "Put", "Create", "Set", "Build"], "Number of Articles ": 19, "Topic level 3": "Party Decorations"}, {"Intent": ["Make", "Throw", "Hide", "Dress", "Be", "Avoid", "Celebrate"], "Number of Articles ": 17, "Topic level 3": "Teen Parties"}, {"Intent": ["Serve", "Set", "Arrange", "Create", "Throw", "Contribute", "Bring"], "Number of Articles ": 11, "Topic level 3": "Dinner Parties"}], "Topic level 2": "Parties"}, {"Number of Articles ": 155, "Sub-Topics": [{"Intent": ["Add", "Decorate", "Eat", "Make"], "Number of Articles ": 7, "Topic level 3": "Edible Flowers"}, {"Intent": ["Preserve", "Keep", "Freeze"], "Number of Articles ": 23, "Topic level 3": "Preserving Herbs"}, {"Intent": ["Grow", "Make", "Roast", "Crush", "Eat", "Chop", "Keep", "Reconstitute", "Remove"], "Number of Articles ": 21, "Topic level 3": "Garlic"}], "Topic level 2": "Herbs and Spices"}, {"Number of Articles ": 100, "Sub-Topics": [{"Intent": ["Make", "Prepare"], "Number of Articles ": 11, "Topic level 3": "Savory Breakfast Dishes"}, {"Intent": ["Make", "Eat", "Soak", "Stir"], "Number of Articles ": 15, "Topic level 3": "Oatmeal and Porridge"}, {"Intent": ["Eat", "Make", "Fold", "Flip", "Keep", "Add"], "Number of Articles ": 29, "Topic level 3": "Pancakes"}], "Topic level 2": "Breakfast"}, {"Intent": ["Encourage", "Eat", "Make", "Get", "Add"], "Number of Articles ": 18, "Topic level 2": "Cooking for Children"}, {"Intent": ["Restore", "Cast", "Remove", "Get", "Improvise", "Buy", "Use", "Make", "Set", "Prevent", "Rack", "Wash", "Pack", "Cover", "Organize"], "Number of Articles ": 67, "Topic level 2": "Cookware"}, {"Intent": ["Roast", "Make", "Plan", "Eat"], "Number of Articles ": 7, "Topic level 2": "Holiday Cooking"}, {"Number of Articles ": 154, "Sub-Topics": [{"Intent": ["Overcome", "Enjoy", "Use", "Dip", "Resist", "Choose"], "Number of Articles ": 9, "Topic level 3": "Chocophilia"}], "Topic level 2": "Appreciation of Food"}, {"Intent": ["Hold", "Spoon", "Tip", "Eat", "Turn", "Chew", "Fold", "Accept", "Summon", "Be", "Avoid", "Complain", "Handle", "Get"], "Number of Articles ": 32, "Topic level 2": "Dining Out"}], "Topic level 1": "Food and Entertaining"}, {"Number of Articles ": 36, "Sub-Topics": [{"Number of Articles ": 1, "Sub-Topics": [{"Number of Articles ": 1, "Sub-Topics": [{"Intent": ["Take"], "Number of Articles ": 1, "Topic level 4": "Supporting Autistic People"}], "Topic level 3": "Autism Spectrum"}], "Topic level 2": "Disability Issues"}, {"Number of Articles ": 4, "Sub-Topics": [{"Number of Articles ": 1, "Sub-Topics": [{"Intent": ["Reduce"], "Number of Articles ": 1, "Topic level 4": "Indigestion (Dyspepsia)"}], "Topic level 3": "Gastrointestinal Tract Health"}, {"Intent": ["Avoid"], "Number of Articles ": 3, "Topic level 3": "Foodborne Illnesses (Food Poisoning)"}], "Topic level 2": "Digestive System Health"}, {"Number of Articles ": 4, "Sub-Topics": [{"Number of Articles ": 3, "Sub-Topics": [{"Intent": ["Make", "Take"], "Number of Articles ": 3, "Topic level 4": "Spices and Health"}], "Topic level 3": "Home Remedies"}], "Topic level 2": "Alternative Health"}, {"Number of Articles ": 14, "Sub-Topics": [{"Intent": ["Replace", "Eat", "Prepare"], "Number of Articles ": 5, "Topic level 3": "Healthy Eating"}, {"Intent": ["Eat"], "Number of Articles ": 1, "Topic level 3": "Lifestyle Diets"}], "Topic level 2": "Nutrition and Food Health"}, {"Number of Articles ": 1, "Sub-Topics": [{"Intent": ["Avoid"], "Number of Articles ": 1, "Topic level 3": "Toxic Chemical Exposure"}], "Topic level 2": "Environmental Health"}, {"Intent": ["Handle"], "Number of Articles ": 1, "Topic level 2": "First Aid and Emergency Health Care"}, {"Number of Articles ": 1, "Sub-Topics": [{"Number of Articles ": 1, "Sub-Topics": [{"Number of Articles ": 1, "Sub-Topics": [{"Intent": ["Use"], "Number of Articles ": 1, "Topic level 5": "Romance"}], "Topic level 4": "Love"}], "Topic level 3": "Emotions and Feelings"}], "Topic level 2": "Psychological Health"}, {"Number of Articles ": 6, "Sub-Topics": [{"Number of Articles ": 4, "Sub-Topics": [{"Intent": ["Quit", "Handle", "Reduce"], "Number of Articles ": 3, "Topic level 4": "Caffeine and Health"}, {"Intent": ["Avoid"], "Number of Articles ": 1, "Topic level 4": "Alcohol Intoxication"}], "Topic level 3": "Recreational Drugs"}], "Topic level 2": "Medicines and Drugs"}, {"Number of Articles ": 1, "Sub-Topics": [{"Intent": ["Calculate"], "Number of Articles ": 1, "Topic level 3": "Blood Health"}], "Topic level 2": "Cardiovascular System Health"}, {"Intent": ["Minimize"], "Number of Articles ": 1, "Topic level 2": "Cancer"}], "Topic level 1": "Health"}, {"Number of Articles ": 113, "Sub-Topics": [{"Number of Articles ": 90, "Sub-Topics": [{"Intent": ["NA"], "Number of Articles ": 1, "Topic level 3": "Backyard Games"}, {"Number of Articles ": 80, "Sub-Topics": [{"Intent": ["Dare", "Do"], "Number of Articles ": 9, "Topic level 4": "Guessing and Mystery Games"}, {"Intent": ["Play", "Make", "Flip", "Die", "Do", "Stand"], "Number of Articles ": 13, "Topic level 4": "Drinking Games"}], "Topic level 3": "Party Games"}, {"Intent": ["NA"], "Number of Articles ": 3, "Topic level 3": "Board Games"}, {"Number of Articles ": 3, "Sub-Topics": [{"Intent": ["NA"], "Number of Articles ": 3, "Topic level 4": "Word Games"}], "Topic level 3": "Puzzles and Memory Games"}, {"Number of Articles ": 1, "Sub-Topics": [{"Intent": ["NA"], "Number of Articles ": 1, "Topic level 4": "Shedding Card Games"}], "Topic level 3": "Card Games"}, {"Intent": ["NA"], "Number of Articles ": 1, "Topic level 3": "Scary Games"}], "Topic level 2": "Games"}, {"Intent": ["Remove"], "Number of Articles ": 1, "Topic level 2": "Collecting"}, {"Number of Articles ": 113, "Sub-Topics": [{"Number of Articles ": 15, "Sub-Topics": [{"Intent": ["Make"], "Number of Articles ": 1, "Topic level 4": "Scrapbooks"}, {"Intent": ["Make", "Hang", "Fill"], "Number of Articles ": 11, "Topic level 4": "Paper Party Decorations"}], "Topic level 3": "Paper Craft"}, {"Number of Articles ": 3, "Sub-Topics": [{"Intent": ["Make"], "Number of Articles ": 1, "Topic level 4": "Wreath Projects"}, {"Intent": ["Make"], "Number of Articles ": 1, "Topic level 4": "Glitter Projects"}, {"Intent": ["Add"], "Number of Articles ": 1, "Topic level 4": "Ribbon Craft Projects"}], "Topic level 3": "Decoration Projects"}, {"Number of Articles ": 13, "Sub-Topics": [{"Intent": ["Melt"], "Number of Articles ": 1, "Topic level 4": "Food Crafts"}], "Topic level 3": "Craft for Kids"}, {"Intent": ["NA"], "Number of Articles ": 1, "Topic level 3": "Candle Making"}, {"Intent": ["Make"], "Number of Articles ": 1, "Topic level 3": "Flower Arranging and Floral Art"}], "Topic level 2": "Crafts"}, {"Number of Articles ": 1, "Sub-Topics": [{"Intent": ["Draw"], "Number of Articles ": 1, "Topic level 3": "Drawing Objects"}], "Topic level 2": "Drawing"}], "Topic level 1": "Hobbies and Crafts"}, {"Number of Articles ": 17, "Sub-Topics": [{"Number of Articles ": 17, "Sub-Topics": [{"Number of Articles ": 1, "Sub-Topics": [{"Number of Articles ": 1, "Sub-Topics": [{"Intent": ["NA"], "Number of Articles ": 1, "Topic level 5": "Food and Drink Businesses"}], "Topic level 4": "Hospitality and Tourism Businesses"}], "Topic level 3": "Business by Industry"}], "Topic level 2": "Business"}, {"Number of Articles ": 5, "Sub-Topics": [{"Intent": ["Get", "Save"], "Number of Articles ": 5, "Topic level 3": "Budgeting"}], "Topic level 2": "Managing Your Money"}, {"Number of Articles ": 8, "Sub-Topics": [{"Intent": ["NA"], "Number of Articles ": 1, "Topic level 3": "Shopping Online"}, {"Intent": ["Do"], "Number of Articles ": 7, "Topic level 3": "Food and Grocery Shopping"}], "Topic level 2": "Shopping"}, {"Intent": ["Avoid"], "Number of Articles ": 1, "Topic level 2": "Legal Matters"}], "Topic level 1": "Finance and Business"}, {"Number of Articles ": 15, "Sub-Topics": [{"Intent": ["Drink"], "Number of Articles ": 1, "Topic level 2": "Christmas"}, {"Intent": ["Make"], "Number of Articles ": 1, "Topic level 2": "National Days"}, {"Intent": ["Make"], "Number of Articles ": 1, "Topic level 2": "Easter"}, {"Intent": ["NA"], "Number of Articles ": 1, "Topic level 2": "Thanksgiving"}, {"Number of Articles ": 2, "Sub-Topics": [{"Intent": ["Check"], "Number of Articles ": 1, "Topic level 3": "Shopping Cards and Vouchers"}], "Topic level 2": "Gift Giving"}, {"Intent": ["Make"], "Number of Articles ": 1, "Topic level 2": "New Year"}], "Topic level 1": "Holidays and Traditions"}, {"Number of Articles ": 19, "Sub-Topics": [{"Number of Articles ": 7, "Sub-Topics": [{"Intent": ["Write", "Start", "Speak"], "Number of Articles ": 7, "Topic level 3": "Official Writing"}], "Topic level 2": "Writing"}, {"Intent": ["NA"], "Number of Articles ": 1, "Topic level 2": "Postal System"}, {"Intent": ["NA"], "Number of Articles ": 1, "Topic level 2": "Stationery"}, {"Intent": ["Get"], "Number of Articles ": 1, "Topic level 2": "Social Activism"}, {"Number of Articles ": 4, "Sub-Topics": [{"Number of Articles ": 4, "Sub-Topics": [{"Number of Articles ": 4, "Sub-Topics": [{"Number of Articles ": 4, "Sub-Topics": [{"Intent": ["Identify"], "Number of Articles ": 3, "Topic level 6": "Plant Identification"}], "Topic level 5": "Botany"}], "Topic level 4": "Biology"}], "Topic level 3": "Science"}], "Topic level 2": "Studying"}], "Topic level 1": "Education and Communications"}, {"Number of Articles ": 1, "Sub-Topics": [{"Number of Articles ": 1, "Sub-Topics": [{"Number of Articles ": 1, "Sub-Topics": [{"Intent": ["Create"], "Number of Articles ": 1, "Topic level 4": "Wicca"}], "Topic level 3": "Nature \u0026 Pagan Beliefs"}], "Topic level 2": "Religion"}], "Topic level 1": "Philosophy and Religion"}, {"Number of Articles ": 3, "Sub-Topics": [{"Number of Articles ": 1, "Sub-Topics": [{"Intent": ["NA"], "Number of Articles ": 1, "Topic level 3": "Golf"}], "Topic level 2": "Individual Sports"}, {"Number of Articles ": 2, "Sub-Topics": [{"Number of Articles ": 2, "Sub-Topics": [{"Intent": ["Roast"], "Number of Articles ": 1, "Topic level 4": "Outdoor Cooking"}, {"Number of Articles ": 1, "Sub-Topics": [{"Intent": ["Make"], "Number of Articles ": 1, "Topic level 5": "Tents"}], "Topic level 4": "Camping Gear"}], "Topic level 3": "Camping"}], "Topic level 2": "Outdoor Recreation"}], "Topic level 1": "Sports and Fitness"}, {"Number of Articles ": 2, "Sub-Topics": [{"Number of Articles ": 1, "Sub-Topics": [{"Intent": ["Hide"], "Number of Articles ": 1, "Topic level 3": "Sneaking Around (Youth)"}], "Topic level 2": "You and Your Parents"}, {"Intent": ["NA"], "Number of Articles ": 1, "Topic level 2": "Sleep Overs"}], "Topic level 1": "Youth"}, {"Number of Articles ": 11, "Sub-Topics": [{"Intent": ["Get", "Know"], "Number of Articles ": 1, "Topic level 2": "Relationship News"}, {"Number of Articles ": 8, "Sub-Topics": [{"Intent": ["Practice", "Get", "Want", "Go", "Behave", "Be"], "Number of Articles ": 5, "Topic level 3": "Etiquette"}, {"Intent": ["Fold"], "Number of Articles ": 1, "Topic level 3": "Manners"}], "Topic level 2": "Social Interactions"}, {"Number of Articles ": 1, "Sub-Topics": [{"Intent": ["Plan"], "Number of Articles ": 1, "Topic level 3": "Ideas for Dates"}], "Topic level 2": "Dating"}, {"Number of Articles ": 1, "Sub-Topics": [{"Intent": ["Choose", "Eat"], "Number of Articles ": 1, "Topic level 3": "Enjoying Friendship"}], "Topic level 2": "Friends"}], "Topic level 1": "Relationships"}, {"Number of Articles ": 3, "Sub-Topics": [{"Number of Articles ": 1, "Sub-Topics": [{"Intent": ["Eat"], "Number of Articles ": 1, "Topic level 3": "Worms"}], "Topic level 2": "Bugs"}, {"Number of Articles ": 1, "Sub-Topics": [{"Number of Articles ": 1, "Sub-Topics": [{"Number of Articles ": 1, "Sub-Topics": [{"Intent": ["NA"], "Number of Articles ": 1, "Topic level 5": "Quail"}], "Topic level 4": "Poultry"}], "Topic level 3": "Bird Breeds"}], "Topic level 2": "Birds"}, {"Number of Articles ": 1, "Sub-Topics": [{"Number of Articles ": 1, "Sub-Topics": [{"Intent": ["NA"], "Number of Articles ": 1, "Topic level 4": "Dog Food Recipes"}], "Topic level 3": "Feeding Dogs"}], "Topic level 2": "Dogs"}], "Topic level 1": "Pets and Animals"}, {"Number of Articles ": 12, "Sub-Topics": [{"Number of Articles ": 2, "Sub-Topics": [{"Number of Articles ": 1, "Sub-Topics": [{"Intent": ["Dress"], "Number of Articles ": 1, "Topic level 4": "Twentieth Century Costumes"}], "Topic level 3": "Historical Costumes"}], "Topic level 2": "Costumes"}, {"Number of Articles ": 1, "Sub-Topics": [{"Intent": ["Hold"], "Number of Articles ": 1, "Topic level 3": "Harry Potter Fandom"}], "Topic level 2": "Fandom"}, {"Number of Articles ": 3, "Sub-Topics": [{"Intent": ["Do"], "Number of Articles ": 1, "Topic level 3": "Songs"}], "Topic level 2": "Music"}], "Topic level 1": "Arts and Entertainment"}, {"Number of Articles ": 3, "Sub-Topics": [{"Number of Articles ": 1, "Sub-Topics": [{"Intent": ["Make"], "Number of Articles ": 1, "Topic level 3": "Fashion Accessories"}], "Topic level 2": "Fashion"}, {"Number of Articles ": 1, "Sub-Topics": [{"Intent": ["Give"], "Number of Articles ": 1, "Topic level 3": "Makeovers"}], "Topic level 2": "Looking Good"}, {"Intent": ["Prepare", "Soak"], "Number of Articles ": 1, "Topic level 2": "Spa Treatments"}], "Topic level 1": "Personal Care and Style"}, {"Number of Articles ": 13, "Sub-Topics": [{"Number of Articles ": 11, "Sub-Topics": [{"Number of Articles ": 11, "Sub-Topics": [{"Intent": ["Introduce"], "Number of Articles ": 1, "Topic level 4": "Baby Feeding and Nutrition"}], "Topic level 3": "Babies and Infants"}], "Topic level 2": "Parenting"}], "Topic level 1": "Family Life"}, {"Number of Articles ": 1, "Sub-Topics": [{"Number of Articles ": 1, "Sub-Topics": [{"Number of Articles ": 1, "Sub-Topics": [{"Number of Articles ": 1, "Sub-Topics": [{"Intent": ["Reply"], "Number of Articles ": 1, "Topic level 5": "Writing Emails"}], "Topic level 4": "Email"}], "Topic level 3": "Online Communications"}], "Topic level 2": "Internet"}], "Topic level 1": "Computers and Electronics"}, {"Number of Articles ": 2, "Sub-Topics": [{"Number of Articles ": 1, "Sub-Topics": [{"Number of Articles ": 1, "Sub-Topics": [{"Number of Articles ": 1, "Sub-Topics": [{"Intent": ["Make"], "Number of Articles ": 1, "Topic level 5": "Cattle"}], "Topic level 4": "Farm Animals and Livestock"}], "Topic level 3": "Farming"}], "Topic level 2": "Occupations"}], "Topic level 1": "Work World"}], "Topic level 0": "root"}';
+
+		// textarea value to JSON object
+		var setJSON = function() {
+			try {
+				var value = '{"Number of Articles ": 0, "Sub-Topics": [{"Number of Articles ": 97, "Sub-Topics": [{"Number of Articles ": 97, "Sub-Topics": [{"Intent": ["NA"], "Number of Articles ": 1, "Topic level 3": "Metalworking"}, {"Intent": ["Identify"], "Number of Articles ": 1, "Topic level 3": "Plastic"}], "Topic level 2": "DIY"}, {"Number of Articles ": 58, "Sub-Topics": [{"Number of Articles ": 38, "Sub-Topics": [{"Intent": ["Remove"], "Number of Articles ": 17, "Topic level 4": "Cleaning Food"}, {"Number of Articles ": 9, "Sub-Topics": [{"Intent": ["Remove", "Eliminate", "Get"], "Number of Articles ": 9, "Topic level 5": "Kitchen Cleaning"}], "Topic level 4": "House Cleaning"}, {"Number of Articles ": 2, "Sub-Topics": [{"Intent": ["Remove"], "Number of Articles ": 1, "Topic level 5": "Rust Stain Removal"}], "Topic level 4": "Cleaning Metals"}, {"Number of Articles ": 1, "Sub-Topics": [{"Intent": ["NA"], "Number of Articles ": 1, "Topic level 5": "Cleaning Cooking Appliances"}], "Topic level 4": "Cleaning Home Appliances"}], "Topic level 3": "Cleaning"}, {"Intent": ["Dispose"], "Number of Articles ": 5, "Topic level 3": "Household Waste Disposal"}, {"Intent": ["Remove"], "Number of Articles ": 2, "Topic level 3": "Stain Removal"}, {"Intent": ["Entertain"], "Number of Articles ": 1, "Topic level 3": "House Guests"}, {"Number of Articles ": 3, "Sub-Topics": [{"Intent": ["NA"], "Number of Articles ": 3, "Topic level 4": "Kitchen Organization"}], "Topic level 3": "Home Organization"}, {"Intent": ["Hold", "Use", "Set", "Fold"], "Number of Articles ": 9, "Topic level 3": "Tableware"}, {"Intent": ["Get"], "Number of Articles ": 1, "Topic level 3": "Laundry"}], "Topic level 2": "Housekeeping"}, {"Number of Articles ": 4, "Sub-Topics": [{"Intent": ["NA"], "Number of Articles ": 1, "Topic level 3": "Heating Systems"}, {"Intent": ["Build", "Create"], "Number of Articles ": 3, "Topic level 3": "Fireplaces"}], "Topic level 2": "Heating and Cooling"}, {"Number of Articles ": 97, "Sub-Topics": [{"Number of Articles ": 1, "Sub-Topics": [{"Intent": ["Make"], "Number of Articles ": 1, "Topic level 4": "Fertilizers"}], "Topic level 3": "Compost Mulch and Soil Preparation"}, {"Number of Articles ": 2, "Sub-Topics": [{"Intent": ["Make"], "Number of Articles ": 1, "Topic level 4": "Rose Crafts"}], "Topic level 3": "Garden Crafts"}, {"Number of Articles ": 11, "Sub-Topics": [{"Intent": ["Grow", "Stake"], "Number of Articles ": 3, "Topic level 4": "Growing Fruit"}], "Topic level 3": "Planting and Growing"}], "Topic level 2": "Gardening"}, {"Number of Articles ": 3, "Sub-Topics": [{"Intent": ["NA"], "Number of Articles ": 1, "Topic level 3": "Measuring and Marking Tools"}], "Topic level 2": "Tools"}, {"Number of Articles ": 11, "Sub-Topics": [{"Number of Articles ": 10, "Sub-Topics": [{"Intent": ["Use"], "Number of Articles ": 7, "Topic level 4": "Kitchen Countertop Appliances"}], "Topic level 3": "Kitchen Appliances"}], "Topic level 2": "Home Appliances"}, {"Number of Articles ": 1, "Sub-Topics": [{"Number of Articles ": 1, "Sub-Topics": [{"Intent": ["Hide"], "Number of Articles ": 1, "Topic level 4": "Hiding Things"}], "Topic level 3": "Home Security"}], "Topic level 2": "Disaster Preparedness"}, {"Number of Articles ": 1, "Sub-Topics": [{"Intent": ["Build"], "Number of Articles ": 1, "Topic level 3": "Making Tables"}], "Topic level 2": "Furniture"}], "Topic level 1": "Home and Garden"}, {"Number of Articles ": 6207, "Sub-Topics": [{"Number of Articles ": 3430, "Sub-Topics": [{"Intent": ["Keep", "Prepare", "Make", "Decorate", "Dress"], "Number of Articles ": 41, "Topic level 3": "Salads"}, {"Number of Articles ": 524, "Sub-Topics": [{"Intent": ["Cook", "Roast", "Make"], "Number of Articles ": 9, "Topic level 4": "Slow Cooker Meat Recipes"}, {"Number of Articles ": 100, "Sub-Topics": [{"Intent": ["Bake", "Tell", "Cook"], "Number of Articles ": 15, "Topic level 5": "Pork Chops"}], "Topic level 4": "Pork"}, {"Intent": ["Cook", "Serve", "Make"], "Number of Articles ": 27, "Topic level 4": "Sausage"}, {"Number of Articles ": 166, "Sub-Topics": [{"Intent": ["Bake", "Make", "Carve", "Cook", "Roast", "Baste", "Tell", "Defrost", "Freeze", "Thaw", "Remove", "Dress"], "Number of Articles ": 41, "Topic level 5": "Turkey Dishes"}], "Topic level 4": "Poultry Recipes"}], "Topic level 3": "Meat"}, {"Number of Articles ": 515, "Sub-Topics": [{"Number of Articles ": 73, "Sub-Topics": [{"Intent": ["Make", "Crush", "Add", "Dip"], "Number of Articles ": 7, "Topic level 5": "Chocolate Cookies and Biscuits"}, {"Intent": ["Make", "Add", "Bake", "Decorate", "Keep"], "Number of Articles ": 9, "Topic level 5": "Sugar Cookies and Biscuits"}], "Topic level 4": "Cookies and Biscuits"}, {"Intent": ["Freeze", "Improve", "Make", "Troubleshoot", "Fill"], "Number of Articles ": 13, "Topic level 4": "Muffins"}, {"Number of Articles ": 176, "Sub-Topics": [{"Intent": ["Make", "Decorate", "Cut"], "Number of Articles ": 27, "Topic level 5": "Shaped and Themed Cakes"}, {"Intent": ["Make", "Keep", "Add"], "Number of Articles ": 7, "Topic level 5": "Fruit Cakes"}, {"Intent": ["Decorate", "Make", "Put", "Glaze"], "Number of Articles ": 15, "Topic level 5": "Cake Decorating"}, {"Intent": ["Substitute", "Make", "Use", "Bake", "Fix", "Defrost", "Stop", "Test", "See", "Cut", "Improve"], "Number of Articles ": 19, "Topic level 5": "Cake Making Tips"}], "Topic level 4": "Cakes"}, {"Intent": ["Make", "Write", "Thicken", "Fix", "Prepare", "Decorate", "Add", "Cover", "Keep", "Do"], "Number of Articles ": 73, "Topic level 4": "Frosting Icing and Fondant"}, {"Intent": ["Make", "Keep"], "Number of Articles ": 13, "Topic level 4": "Donuts and Doughnuts"}], "Topic level 3": "Baking"}, {"Number of Articles ": 289, "Sub-Topics": [{"Number of Articles ": 121, "Sub-Topics": [{"Intent": ["Make", "Stir"], "Number of Articles ": 17, "Topic level 5": "Chinese Dishes"}, {"Number of Articles ": 41, "Sub-Topics": [{"Intent": ["Eat", "Make", "Prepare"], "Number of Articles ": 21, "Topic level 6": "Sushi"}], "Topic level 5": "Japanese Dishes"}], "Topic level 4": "Asian Cuisine"}, {"Intent": ["Make", "Serve"], "Number of Articles ": 11, "Topic level 4": "Middle Eastern Cuisine"}, {"Number of Articles ": 54, "Sub-Topics": [{"Intent": ["Make"], "Number of Articles ": 7, "Topic level 5": "Indian Breads"}, {"Intent": ["Make"], "Number of Articles ": 7, "Topic level 5": "Indian Desserts"}, {"Intent": ["Make"], "Number of Articles ": 5, "Topic level 5": "Vegetarian Indian Dishes"}], "Topic level 4": "Indian Cuisine"}, {"Number of Articles ": 23, "Sub-Topics": [{"Intent": ["Freeze", "Make", "Eat"], "Number of Articles ": 9, "Topic level 5": "Italian Cuisine"}], "Topic level 4": "European Cuisine"}, {"Intent": ["Make", "Fold", "Use", "Eat", "Choose", "Roll", "Fix"], "Number of Articles ": 51, "Topic level 4": "Central and South American Cuisine"}], "Topic level 3": "World Cuisines"}, {"Number of Articles ": 169, "Sub-Topics": [{"Intent": ["Make", "Add"], "Number of Articles ": 15, "Topic level 4": "Gelatin Desserts"}, {"Intent": ["Make"], "Number of Articles ": 15, "Topic level 4": "Puddings"}, {"Number of Articles ": 53, "Sub-Topics": [{"Intent": ["Make"], "Number of Articles ": 9, "Topic level 5": "Ice Pops"}], "Topic level 4": "Ice Cream and Frozen Desserts"}, {"Intent": ["Make", "Prevent", "Tell", "Lattice", "Bake", "Keep", "Freeze", "Decorate", "Cut"], "Number of Articles ": 25, "Topic level 4": "Dessert Pies"}], "Topic level 3": "Desserts and Sweets"}, {"Number of Articles ": 131, "Sub-Topics": [{"Intent": ["Freeze", "Make"], "Number of Articles ": 13, "Topic level 4": "Lasagna"}, {"Intent": ["Make", "Prepare", "Freeze", "Stop"], "Number of Articles ": 13, "Topic level 4": "Macaroni and Cheese"}, {"Intent": ["Make", "Keep", "Cook"], "Number of Articles ": 15, "Topic level 4": "Spaghetti"}, {"Intent": ["Make", "Thicken"], "Number of Articles ": 9, "Topic level 4": "Pasta Sauce Recipes"}], "Topic level 3": "Pasta and Noodles"}, {"Intent": ["Eat", "Make", "Reduce", "Fix", "Prepare", "Add"], "Number of Articles ": 60, "Topic level 3": "Soups"}, {"Number of Articles ": 564, "Sub-Topics": [{"Intent": ["Eat", "Prepare", "Freeze", "Tell", "Identify", "Keep", "Grow", "Make", "Roast"], "Number of Articles ": 37, "Topic level 4": "Mushrooms"}, {"Intent": ["Mince", "Keep", "Preserve", "Make", "Get", "Extract", "Remove", "Tell", "Tie"], "Number of Articles ": 21, "Topic level 4": "Onions"}, {"Intent": ["Roast", "Eat", "Cut", "Bake", "Prepare", "Grow", "Make", "Buy", "Preserve"], "Number of Articles ": 45, "Topic level 4": "Cruciferous Vegetables"}, {"Intent": ["Use", "Make", "Eat"], "Number of Articles ": 11, "Topic level 4": "Bananas"}, {"Intent": ["Make", "Roast", "Bake", "Choose", "Cook", "Fix", "Decide", "Freeze", "Keep", "Cure"], "Number of Articles ": 65, "Topic level 4": "Potato Dishes"}, {"Intent": ["Make", "Add"], "Number of Articles ": 19, "Topic level 4": "Vegetable Soups"}, {"Intent": ["Bake", "Save", "Roast", "Make", "Grate", "Eat", "Tell", "Cook"], "Number of Articles ": 33, "Topic level 4": "Squash"}, {"Intent": ["Make", "Eat", "Prune", "Pick", "Serve"], "Number of Articles ": 27, "Topic level 4": "Berries"}], "Topic level 3": "Fruits and Vegetables"}, {"Number of Articles ": 144, "Sub-Topics": [{"Intent": ["Make", "Melt"], "Number of Articles ": 9, "Topic level 4": "Caramel"}], "Topic level 3": "Chocolate and Candy"}, {"Number of Articles ": 175, "Sub-Topics": [{"Intent": ["Eat", "Make", "Bake", "Know", "Reheat", "Fry", "Bring", "Baste", "Choose"], "Number of Articles ": 31, "Topic level 4": "Egg Basics"}, {"Intent": ["Make", "Eat", "Buy"], "Number of Articles ": 15, "Topic level 4": "Yogurt"}, {"Intent": ["Make", "Slice", "Melt", "Tell", "Soften", "Eat", "Remove", "Bake", "Serve", "Prevent", "Grate"], "Number of Articles ": 47, "Topic level 4": "Cheese"}, {"Intent": ["Clarify", "Make", "Prepare", "Stop", "Soften"], "Number of Articles ": 21, "Topic level 4": "Butter and Ghee"}], "Topic level 3": "Eggs and Dairy"}, {"Number of Articles ": 180, "Sub-Topics": [{"Intent": ["Make", "Test"], "Number of Articles ": 17, "Topic level 4": "Jams and Jellies"}, {"Intent": ["Marinate", "Make", "Remove", "Thicken", "Scratch", "Stir", "Serve", "Reduce"], "Number of Articles ": 77, "Topic level 4": "Sauces"}, {"Intent": ["Make", "Fix", "Roast"], "Number of Articles ": 17, "Topic level 4": "Gravies"}], "Topic level 3": "Jams Preserves and Condiments"}, {"Number of Articles ": 280, "Sub-Topics": [{"Intent": ["Prepare", "Cook", "Eat", "Thaw", "Make", "Bake", "Grill"], "Number of Articles ": 27, "Topic level 4": "Prawns and Shrimp"}, {"Intent": ["Bake", "Eat", "Tell", "Marinate", "Serve", "Prepare", "Cook", "Make"], "Number of Articles ": 25, "Topic level 4": "Salmon"}, {"Intent": ["Eat", "Serve", "Cook", "Make", "Bake", "Prepare"], "Number of Articles ": 23, "Topic level 4": "Crab"}], "Topic level 3": "Fish and Seafood"}, {"Number of Articles ": 125, "Sub-Topics": [{"Number of Articles ": 24, "Sub-Topics": [{"Intent": ["Make", "Bake"], "Number of Articles ": 11, "Topic level 5": "Hot Dogs"}], "Topic level 4": "Fast Food"}], "Topic level 3": "Sandwiches and Quick Meals"}, {"Intent": ["Cook", "Roast", "Make"], "Number of Articles ": 12, "Topic level 3": "Slow Cooker Recipes"}, {"Number of Articles ": 56, "Sub-Topics": [{"Intent": ["Make", "Replace", "Eat", "Be", "Start"], "Number of Articles ": 21, "Topic level 4": "Vegan"}], "Topic level 3": "Vegetarian"}], "Topic level 2": "Recipes"}, {"Number of Articles ": 76, "Sub-Topics": [{"Intent": ["Fill", "Start", "Use", "Add", "Control", "Convert", "Grill", "Measure", "Build", "Make"], "Number of Articles ": 15, "Topic level 3": "Barbecue Equipment"}, {"Number of Articles ": 31, "Sub-Topics": [{"Intent": ["Make"], "Number of Articles ": 11, "Topic level 4": "Ribs"}], "Topic level 3": "Barbecue Meat"}], "Topic level 2": "Barbecue"}, {"Intent": ["Hold", "Spoon", "Eat", "Turn", "Chew", "Fold", "Accept", "Be", "Avoid"], "Number of Articles ": 15, "Topic level 2": "Dining Etiquette"}, {"Intent": ["Handle", "Dispose", "Tell", "Get", "Keep", "Enjoy", "Know", "Prevent", "Test", "Eat", "Freeze"], "Number of Articles ": 29, "Topic level 2": "Food Safety"}, {"Number of Articles ": 843, "Sub-Topics": [{"Number of Articles ": 342, "Sub-Topics": [{"Intent": ["Improve", "Drink", "Stay", "Lessen", "Feel", "Stop", "Prepare", "Reduce", "Burn", "Avoid"], "Number of Articles ": 25, "Topic level 4": "Alcohol Consumption"}, {"Number of Articles ": 138, "Sub-Topics": [{"Intent": ["Make", "Infuse", "Drink"], "Number of Articles ": 13, "Topic level 5": "Infused Spirits and Liqueurs"}, {"Number of Articles ": 27, "Sub-Topics": [{"Intent": ["Make"], "Number of Articles ": 11, "Topic level 6": "Jello and Jelly Shots"}], "Topic level 5": "Mixed Drink Shooters and Shots"}, {"Number of Articles ": 64, "Sub-Topics": [{"Intent": ["Make", "Mix"], "Number of Articles ": 13, "Topic level 6": "Vodka Based Cocktails"}], "Topic level 5": "Cocktails"}], "Topic level 4": "Spirits and Liqueurs"}, {"Intent": ["Chug", "Enjoy", "Open", "Brew", "Make", "Disguise", "Drink", "Construct", "Change", "Buy", "Freeze", "Tap", "Depressurize", "Sell", "Repel"], "Number of Articles ": 33, "Topic level 4": "Beer and Cider"}, {"Intent": ["Make", "Understand", "Become", "Create", "Break"], "Number of Articles ": 9, "Topic level 4": "Bartending"}], "Topic level 3": "Alcoholic Drinks"}, {"Number of Articles ": 96, "Sub-Topics": [{"Intent": ["Make", "Prepare", "Drink"], "Number of Articles ": 5, "Topic level 4": "Brewing Tea"}, {"Intent": ["Make"], "Number of Articles ": 13, "Topic level 4": "Milk Tea"}, {"Intent": ["Drink", "Make"], "Number of Articles ": 9, "Topic level 4": "Green Tea"}], "Topic level 3": "Tea"}, {"Number of Articles ": 146, "Sub-Topics": [{"Intent": ["Make", "Grind", "Drink"], "Number of Articles ": 27, "Topic level 4": "Espresso Based Coffee"}, {"Number of Articles ": 44, "Sub-Topics": [{"Intent": ["Operate", "Use", "Maintain", "Reset", "Choose"], "Number of Articles ": 29, "Topic level 5": "Coffee Machines"}], "Topic level 4": "Coffee Accessories"}], "Topic level 3": "Coffee"}, {"Number of Articles ": 82, "Sub-Topics": [{"Intent": ["Make"], "Number of Articles ": 11, "Topic level 4": "Fruit Based Shakes"}, {"Intent": ["Make", "Keep", "Add", "Drink", "Pasteurize", "Maintain", "Remove", "Stop", "Prepare", "Choose"], "Number of Articles ": 82, "Topic level 4": "Smoothies"}], "Topic level 3": "Smoothies Shakes and Milk"}], "Topic level 2": "Drinks"}, {"Number of Articles ": 857, "Sub-Topics": [{"Number of Articles ": 185, "Sub-Topics": [{"Intent": ["Freeze", "Prevent", "Burn", "Thaw"], "Number of Articles ": 83, "Topic level 4": "Freezing Food"}], "Topic level 3": "Food Preservation Techniques"}, {"Intent": ["Keep", "Tell", "Ripen", "Select", "Prevent", "Produce", "Identify", "Detect", "Burn", "Buy", "Break", "Pick", "Make", "Choose", "Avoid", "Freeze", "Reduce", "Start", "Roast", "Reheat", "Wrap", "Preserve"], "Number of Articles ": 149, "Topic level 3": "Food Selection and Storage"}, {"Intent": ["Use", "Eat", "Plan", "Make", "Consider", "Decide", "Go", "Create", "Pack"], "Number of Articles ": 21, "Topic level 3": "Meal Planning"}, {"Intent": ["Blow", "Slice", "Prepare"], "Number of Articles ": 39, "Topic level 3": "Peeling Food"}, {"Number of Articles ": 230, "Sub-Topics": [{"Intent": ["Make"], "Number of Articles ": 35, "Topic level 4": "Steaming Food"}], "Topic level 3": "Basic Cooking Skills"}], "Topic level 2": "Food Preparation"}, {"Number of Articles ": 236, "Sub-Topics": [{"Number of Articles ": 47, "Sub-Topics": [{"Intent": ["Keep", "Use", "Make", "Enjoy"], "Number of Articles ": 19, "Topic level 4": "Popcorn"}, {"Intent": ["Make", "Keep"], "Number of Articles ": 7, "Topic level 4": "Dips"}], "Topic level 3": "Party Snacks"}, {"Intent": ["Survive", "Organize", "Plan", "Go"], "Number of Articles ": 7, "Topic level 3": "Parties for Children"}, {"Number of Articles ": 58, "Sub-Topics": [{"Number of Articles ": 28, "Sub-Topics": [{"Intent": ["Decline", "Write", "Print", "Fill", "Make"], "Number of Articles ": 9, "Topic level 5": "Wedding Invitations"}], "Topic level 4": "Invitations"}], "Topic level 3": "Party Planning"}, {"Intent": ["Be", "Meet", "Survive", "Enjoy", "Mingle"], "Number of Articles ": 13, "Topic level 3": "Party Socializing"}, {"Intent": ["Make", "Decorate", "Untie", "Put", "Create", "Set", "Build"], "Number of Articles ": 19, "Topic level 3": "Party Decorations"}, {"Intent": ["Make", "Throw", "Hide", "Dress", "Be", "Avoid", "Celebrate"], "Number of Articles ": 17, "Topic level 3": "Teen Parties"}, {"Intent": ["Serve", "Set", "Arrange", "Create", "Throw", "Contribute", "Bring"], "Number of Articles ": 11, "Topic level 3": "Dinner Parties"}], "Topic level 2": "Parties"}, {"Number of Articles ": 155, "Sub-Topics": [{"Intent": ["Add", "Decorate", "Eat", "Make"], "Number of Articles ": 7, "Topic level 3": "Edible Flowers"}, {"Intent": ["Preserve", "Keep", "Freeze"], "Number of Articles ": 23, "Topic level 3": "Preserving Herbs"}, {"Intent": ["Grow", "Make", "Roast", "Crush", "Eat", "Chop", "Keep", "Reconstitute", "Remove"], "Number of Articles ": 21, "Topic level 3": "Garlic"}], "Topic level 2": "Herbs and Spices"}, {"Number of Articles ": 100, "Sub-Topics": [{"Intent": ["Make", "Prepare"], "Number of Articles ": 11, "Topic level 3": "Savory Breakfast Dishes"}, {"Intent": ["Make", "Eat", "Soak", "Stir"], "Number of Articles ": 15, "Topic level 3": "Oatmeal and Porridge"}, {"Intent": ["Eat", "Make", "Fold", "Flip", "Keep", "Add"], "Number of Articles ": 29, "Topic level 3": "Pancakes"}], "Topic level 2": "Breakfast"}, {"Intent": ["Encourage", "Eat", "Make", "Get", "Add"], "Number of Articles ": 18, "Topic level 2": "Cooking for Children"}, {"Intent": ["Restore", "Cast", "Remove", "Get", "Improvise", "Buy", "Use", "Make", "Set", "Prevent", "Rack", "Wash", "Pack", "Cover", "Organize"], "Number of Articles ": 67, "Topic level 2": "Cookware"}, {"Intent": ["Roast", "Make", "Plan", "Eat"], "Number of Articles ": 7, "Topic level 2": "Holiday Cooking"}, {"Number of Articles ": 154, "Sub-Topics": [{"Intent": ["Overcome", "Enjoy", "Use", "Dip", "Resist", "Choose"], "Number of Articles ": 9, "Topic level 3": "Chocophilia"}], "Topic level 2": "Appreciation of Food"}, {"Intent": ["Hold", "Spoon", "Tip", "Eat", "Turn", "Chew", "Fold", "Accept", "Summon", "Be", "Avoid", "Complain", "Handle", "Get"], "Number of Articles ": 32, "Topic level 2": "Dining Out"}], "Topic level 1": "Food and Entertaining"}, {"Number of Articles ": 36, "Sub-Topics": [{"Number of Articles ": 1, "Sub-Topics": [{"Number of Articles ": 1, "Sub-Topics": [{"Intent": ["Take"], "Number of Articles ": 1, "Topic level 4": "Supporting Autistic People"}], "Topic level 3": "Autism Spectrum"}], "Topic level 2": "Disability Issues"}, {"Number of Articles ": 4, "Sub-Topics": [{"Number of Articles ": 1, "Sub-Topics": [{"Intent": ["Reduce"], "Number of Articles ": 1, "Topic level 4": "Indigestion (Dyspepsia)"}], "Topic level 3": "Gastrointestinal Tract Health"}, {"Intent": ["Avoid"], "Number of Articles ": 3, "Topic level 3": "Foodborne Illnesses (Food Poisoning)"}], "Topic level 2": "Digestive System Health"}, {"Number of Articles ": 4, "Sub-Topics": [{"Number of Articles ": 3, "Sub-Topics": [{"Intent": ["Make", "Take"], "Number of Articles ": 3, "Topic level 4": "Spices and Health"}], "Topic level 3": "Home Remedies"}], "Topic level 2": "Alternative Health"}, {"Number of Articles ": 14, "Sub-Topics": [{"Intent": ["Replace", "Eat", "Prepare"], "Number of Articles ": 5, "Topic level 3": "Healthy Eating"}, {"Intent": ["Eat"], "Number of Articles ": 1, "Topic level 3": "Lifestyle Diets"}], "Topic level 2": "Nutrition and Food Health"}, {"Number of Articles ": 1, "Sub-Topics": [{"Intent": ["Avoid"], "Number of Articles ": 1, "Topic level 3": "Toxic Chemical Exposure"}], "Topic level 2": "Environmental Health"}, {"Intent": ["Handle"], "Number of Articles ": 1, "Topic level 2": "First Aid and Emergency Health Care"}, {"Number of Articles ": 1, "Sub-Topics": [{"Number of Articles ": 1, "Sub-Topics": [{"Number of Articles ": 1, "Sub-Topics": [{"Intent": ["Use"], "Number of Articles ": 1, "Topic level 5": "Romance"}], "Topic level 4": "Love"}], "Topic level 3": "Emotions and Feelings"}], "Topic level 2": "Psychological Health"}, {"Number of Articles ": 6, "Sub-Topics": [{"Number of Articles ": 4, "Sub-Topics": [{"Intent": ["Quit", "Handle", "Reduce"], "Number of Articles ": 3, "Topic level 4": "Caffeine and Health"}, {"Intent": ["Avoid"], "Number of Articles ": 1, "Topic level 4": "Alcohol Intoxication"}], "Topic level 3": "Recreational Drugs"}], "Topic level 2": "Medicines and Drugs"}, {"Number of Articles ": 1, "Sub-Topics": [{"Intent": ["Calculate"], "Number of Articles ": 1, "Topic level 3": "Blood Health"}], "Topic level 2": "Cardiovascular System Health"}, {"Intent": ["Minimize"], "Number of Articles ": 1, "Topic level 2": "Cancer"}], "Topic level 1": "Health"}, {"Number of Articles ": 113, "Sub-Topics": [{"Number of Articles ": 90, "Sub-Topics": [{"Intent": ["NA"], "Number of Articles ": 1, "Topic level 3": "Backyard Games"}, {"Number of Articles ": 80, "Sub-Topics": [{"Intent": ["Dare", "Do"], "Number of Articles ": 9, "Topic level 4": "Guessing and Mystery Games"}, {"Intent": ["Play", "Make", "Flip", "Die", "Do", "Stand"], "Number of Articles ": 13, "Topic level 4": "Drinking Games"}], "Topic level 3": "Party Games"}, {"Intent": ["NA"], "Number of Articles ": 3, "Topic level 3": "Board Games"}, {"Number of Articles ": 3, "Sub-Topics": [{"Intent": ["NA"], "Number of Articles ": 3, "Topic level 4": "Word Games"}], "Topic level 3": "Puzzles and Memory Games"}, {"Number of Articles ": 1, "Sub-Topics": [{"Intent": ["NA"], "Number of Articles ": 1, "Topic level 4": "Shedding Card Games"}], "Topic level 3": "Card Games"}, {"Intent": ["NA"], "Number of Articles ": 1, "Topic level 3": "Scary Games"}], "Topic level 2": "Games"}, {"Intent": ["Remove"], "Number of Articles ": 1, "Topic level 2": "Collecting"}, {"Number of Articles ": 113, "Sub-Topics": [{"Number of Articles ": 15, "Sub-Topics": [{"Intent": ["Make"], "Number of Articles ": 1, "Topic level 4": "Scrapbooks"}, {"Intent": ["Make", "Hang", "Fill"], "Number of Articles ": 11, "Topic level 4": "Paper Party Decorations"}], "Topic level 3": "Paper Craft"}, {"Number of Articles ": 3, "Sub-Topics": [{"Intent": ["Make"], "Number of Articles ": 1, "Topic level 4": "Wreath Projects"}, {"Intent": ["Make"], "Number of Articles ": 1, "Topic level 4": "Glitter Projects"}, {"Intent": ["Add"], "Number of Articles ": 1, "Topic level 4": "Ribbon Craft Projects"}], "Topic level 3": "Decoration Projects"}, {"Number of Articles ": 13, "Sub-Topics": [{"Intent": ["Melt"], "Number of Articles ": 1, "Topic level 4": "Food Crafts"}], "Topic level 3": "Craft for Kids"}, {"Intent": ["NA"], "Number of Articles ": 1, "Topic level 3": "Candle Making"}, {"Intent": ["Make"], "Number of Articles ": 1, "Topic level 3": "Flower Arranging and Floral Art"}], "Topic level 2": "Crafts"}, {"Number of Articles ": 1, "Sub-Topics": [{"Intent": ["Draw"], "Number of Articles ": 1, "Topic level 3": "Drawing Objects"}], "Topic level 2": "Drawing"}], "Topic level 1": "Hobbies and Crafts"}, {"Number of Articles ": 17, "Sub-Topics": [{"Number of Articles ": 17, "Sub-Topics": [{"Number of Articles ": 1, "Sub-Topics": [{"Number of Articles ": 1, "Sub-Topics": [{"Intent": ["NA"], "Number of Articles ": 1, "Topic level 5": "Food and Drink Businesses"}], "Topic level 4": "Hospitality and Tourism Businesses"}], "Topic level 3": "Business by Industry"}], "Topic level 2": "Business"}, {"Number of Articles ": 5, "Sub-Topics": [{"Intent": ["Get", "Save"], "Number of Articles ": 5, "Topic level 3": "Budgeting"}], "Topic level 2": "Managing Your Money"}, {"Number of Articles ": 8, "Sub-Topics": [{"Intent": ["NA"], "Number of Articles ": 1, "Topic level 3": "Shopping Online"}, {"Intent": ["Do"], "Number of Articles ": 7, "Topic level 3": "Food and Grocery Shopping"}], "Topic level 2": "Shopping"}, {"Intent": ["Avoid"], "Number of Articles ": 1, "Topic level 2": "Legal Matters"}], "Topic level 1": "Finance and Business"}, {"Number of Articles ": 15, "Sub-Topics": [{"Intent": ["Drink"], "Number of Articles ": 1, "Topic level 2": "Christmas"}, {"Intent": ["Make"], "Number of Articles ": 1, "Topic level 2": "National Days"}, {"Intent": ["Make"], "Number of Articles ": 1, "Topic level 2": "Easter"}, {"Intent": ["NA"], "Number of Articles ": 1, "Topic level 2": "Thanksgiving"}, {"Number of Articles ": 2, "Sub-Topics": [{"Intent": ["Check"], "Number of Articles ": 1, "Topic level 3": "Shopping Cards and Vouchers"}], "Topic level 2": "Gift Giving"}, {"Intent": ["Make"], "Number of Articles ": 1, "Topic level 2": "New Year"}], "Topic level 1": "Holidays and Traditions"}, {"Number of Articles ": 19, "Sub-Topics": [{"Number of Articles ": 7, "Sub-Topics": [{"Intent": ["Write", "Start", "Speak"], "Number of Articles ": 7, "Topic level 3": "Official Writing"}], "Topic level 2": "Writing"}, {"Intent": ["NA"], "Number of Articles ": 1, "Topic level 2": "Postal System"}, {"Intent": ["NA"], "Number of Articles ": 1, "Topic level 2": "Stationery"}, {"Intent": ["Get"], "Number of Articles ": 1, "Topic level 2": "Social Activism"}, {"Number of Articles ": 4, "Sub-Topics": [{"Number of Articles ": 4, "Sub-Topics": [{"Number of Articles ": 4, "Sub-Topics": [{"Number of Articles ": 4, "Sub-Topics": [{"Intent": ["Identify"], "Number of Articles ": 3, "Topic level 6": "Plant Identification"}], "Topic level 5": "Botany"}], "Topic level 4": "Biology"}], "Topic level 3": "Science"}], "Topic level 2": "Studying"}], "Topic level 1": "Education and Communications"}, {"Number of Articles ": 1, "Sub-Topics": [{"Number of Articles ": 1, "Sub-Topics": [{"Number of Articles ": 1, "Sub-Topics": [{"Intent": ["Create"], "Number of Articles ": 1, "Topic level 4": "Wicca"}], "Topic level 3": "Nature \u0026 Pagan Beliefs"}], "Topic level 2": "Religion"}], "Topic level 1": "Philosophy and Religion"}, {"Number of Articles ": 3, "Sub-Topics": [{"Number of Articles ": 1, "Sub-Topics": [{"Intent": ["NA"], "Number of Articles ": 1, "Topic level 3": "Golf"}], "Topic level 2": "Individual Sports"}, {"Number of Articles ": 2, "Sub-Topics": [{"Number of Articles ": 2, "Sub-Topics": [{"Intent": ["Roast"], "Number of Articles ": 1, "Topic level 4": "Outdoor Cooking"}, {"Number of Articles ": 1, "Sub-Topics": [{"Intent": ["Make"], "Number of Articles ": 1, "Topic level 5": "Tents"}], "Topic level 4": "Camping Gear"}], "Topic level 3": "Camping"}], "Topic level 2": "Outdoor Recreation"}], "Topic level 1": "Sports and Fitness"}, {"Number of Articles ": 2, "Sub-Topics": [{"Number of Articles ": 1, "Sub-Topics": [{"Intent": ["Hide"], "Number of Articles ": 1, "Topic level 3": "Sneaking Around (Youth)"}], "Topic level 2": "You and Your Parents"}, {"Intent": ["NA"], "Number of Articles ": 1, "Topic level 2": "Sleep Overs"}], "Topic level 1": "Youth"}, {"Number of Articles ": 11, "Sub-Topics": [{"Intent": ["Get", "Know"], "Number of Articles ": 1, "Topic level 2": "Relationship News"}, {"Number of Articles ": 8, "Sub-Topics": [{"Intent": ["Practice", "Get", "Want", "Go", "Behave", "Be"], "Number of Articles ": 5, "Topic level 3": "Etiquette"}, {"Intent": ["Fold"], "Number of Articles ": 1, "Topic level 3": "Manners"}], "Topic level 2": "Social Interactions"}, {"Number of Articles ": 1, "Sub-Topics": [{"Intent": ["Plan"], "Number of Articles ": 1, "Topic level 3": "Ideas for Dates"}], "Topic level 2": "Dating"}, {"Number of Articles ": 1, "Sub-Topics": [{"Intent": ["Choose", "Eat"], "Number of Articles ": 1, "Topic level 3": "Enjoying Friendship"}], "Topic level 2": "Friends"}], "Topic level 1": "Relationships"}, {"Number of Articles ": 3, "Sub-Topics": [{"Number of Articles ": 1, "Sub-Topics": [{"Intent": ["Eat"], "Number of Articles ": 1, "Topic level 3": "Worms"}], "Topic level 2": "Bugs"}, {"Number of Articles ": 1, "Sub-Topics": [{"Number of Articles ": 1, "Sub-Topics": [{"Number of Articles ": 1, "Sub-Topics": [{"Intent": ["NA"], "Number of Articles ": 1, "Topic level 5": "Quail"}], "Topic level 4": "Poultry"}], "Topic level 3": "Bird Breeds"}], "Topic level 2": "Birds"}, {"Number of Articles ": 1, "Sub-Topics": [{"Number of Articles ": 1, "Sub-Topics": [{"Intent": ["NA"], "Number of Articles ": 1, "Topic level 4": "Dog Food Recipes"}], "Topic level 3": "Feeding Dogs"}], "Topic level 2": "Dogs"}], "Topic level 1": "Pets and Animals"}, {"Number of Articles ": 12, "Sub-Topics": [{"Number of Articles ": 2, "Sub-Topics": [{"Number of Articles ": 1, "Sub-Topics": [{"Intent": ["Dress"], "Number of Articles ": 1, "Topic level 4": "Twentieth Century Costumes"}], "Topic level 3": "Historical Costumes"}], "Topic level 2": "Costumes"}, {"Number of Articles ": 1, "Sub-Topics": [{"Intent": ["Hold"], "Number of Articles ": 1, "Topic level 3": "Harry Potter Fandom"}], "Topic level 2": "Fandom"}, {"Number of Articles ": 3, "Sub-Topics": [{"Intent": ["Do"], "Number of Articles ": 1, "Topic level 3": "Songs"}], "Topic level 2": "Music"}], "Topic level 1": "Arts and Entertainment"}, {"Number of Articles ": 3, "Sub-Topics": [{"Number of Articles ": 1, "Sub-Topics": [{"Intent": ["Make"], "Number of Articles ": 1, "Topic level 3": "Fashion Accessories"}], "Topic level 2": "Fashion"}, {"Number of Articles ": 1, "Sub-Topics": [{"Intent": ["Give"], "Number of Articles ": 1, "Topic level 3": "Makeovers"}], "Topic level 2": "Looking Good"}, {"Intent": ["Prepare", "Soak"], "Number of Articles ": 1, "Topic level 2": "Spa Treatments"}], "Topic level 1": "Personal Care and Style"}, {"Number of Articles ": 13, "Sub-Topics": [{"Number of Articles ": 11, "Sub-Topics": [{"Number of Articles ": 11, "Sub-Topics": [{"Intent": ["Introduce"], "Number of Articles ": 1, "Topic level 4": "Baby Feeding and Nutrition"}], "Topic level 3": "Babies and Infants"}], "Topic level 2": "Parenting"}], "Topic level 1": "Family Life"}, {"Number of Articles ": 1, "Sub-Topics": [{"Number of Articles ": 1, "Sub-Topics": [{"Number of Articles ": 1, "Sub-Topics": [{"Number of Articles ": 1, "Sub-Topics": [{"Intent": ["Reply"], "Number of Articles ": 1, "Topic level 5": "Writing Emails"}], "Topic level 4": "Email"}], "Topic level 3": "Online Communications"}], "Topic level 2": "Internet"}], "Topic level 1": "Computers and Electronics"}, {"Number of Articles ": 2, "Sub-Topics": [{"Number of Articles ": 1, "Sub-Topics": [{"Number of Articles ": 1, "Sub-Topics": [{"Number of Articles ": 1, "Sub-Topics": [{"Intent": ["Make"], "Number of Articles ": 1, "Topic level 5": "Cattle"}], "Topic level 4": "Farm Animals and Livestock"}], "Topic level 3": "Farming"}], "Topic level 2": "Occupations"}], "Topic level 1": "Work World"}], "Topic level 0": "root"}';
+				jsonObj = JSON.parse(value);
+			}
+			catch (err) {
+				alert(err);
+			}
+		};
+
+		// load default value
+		setJSON();
+
+		var loadJsonBtn = document.querySelector("button.load-json");
+		var collapseBtn = document.querySelector("button.collapse");
+		var maxlvlBtn = document.querySelector("button.maxlvl");
+
+		loadJsonBtn.addEventListener("click", function() {
+			setJSON();
+			jsonViewer.showJSON(jsonObj);
+		});
+
+		collapseBtn.addEventListener("click", function() {
+			jsonViewer.showJSON(jsonObj, null, 1);
+		});
+
+		maxlvlBtn.addEventListener("click", function() {
+			jsonViewer.showJSON(jsonObj, 3);
+		});
+	</script>
+</div>
+</body>
+</html>
